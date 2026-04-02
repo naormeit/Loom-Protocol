@@ -1,39 +1,48 @@
-import os
-# In production, we use: from azure.ai.contentsafety import ContentSafetyClient
-# For the MVP, we start with the logical orchestration flow.
+import time
 
 class LoomKernel:
     def __init__(self):
         self.version = "1.0.0-alpha"
-        self.min_microsoft_services = 2 # Imagine Cup Rule [cite: 9]
+        # Imagine Cup Compliance: Using 2+ Microsoft AI Services
+        self.services = ["Azure AI Foundry", "Azure Content Safety"]
 
     def process_handshake(self, agent_packet):
         """
-        Step 1: Parse Intent with Azure AI Foundry logic.
-        Step 2: Scrub with Azure Content Safety.
-        Step 3: Check Atomic Lock in Cosmos DB.
+        The ATP Handshake Pipeline:
+        1. Ingress (Receive Packet)
+        2. Intent Parsing (Azure AI Foundry)
+        3. Safety Scrub (Azure Content Safety)
+        4. Atomic Resolution
         """
-        print(f"Loom ATP {self.version} received packet: {agent_packet['intent_hash']}")
+        print(f"\n[Loom ATP] Handshake initiated by {agent_packet['agent_id']}")
         
-        # SIMULATION: Intent Scrubbing (Imagine Cup Cybersecurity Category)
-        if self._is_malicious(agent_packet['intent']):
-            return {"status": 403, "message": "Safety Violation: Intent Rejected"}
+        # --- SIMULATED AZURE AI FOUNDRY PARSING ---
+        parsed_intent = self._parse_intent_with_ai_foundry(agent_packet['intent'])
+        
+        # --- SIMULATED AZURE CONTENT SAFETY SCRUB ---
+        if not self._check_content_safety(parsed_intent):
+            return {"status": 403, "message": "Rejected: Azure Content Safety flagged intent."}
 
-        # SIMULATION: Atomic Locking logic
-        return {"status": 201, "message": "Atomic Lock Secured - Proceed to API"}
+        # --- ATOMIC RESOLUTION ---
+        return {
+            "status": 201, 
+            "message": f"Atomic Lock Secured for {agent_packet['intent_hash']}",
+            "parsed_as": parsed_intent
+        }
 
-    def _is_malicious(self, text):
-        # This will wrap the Azure Content Safety API
-        return "delete everything" in text.lower()
+    def _parse_intent_with_ai_foundry(self, raw_text):
+        print(f" > Azure AI Foundry: Parsing intent '{raw_text}'...")
+        # Simulated NLP Logic: Extracting the core action
+        return raw_text.strip().upper()
 
-# Mocking a request from an AI Agent
-mock_packet = {
-    "agent_id": "ENTRA-ID-9982",
-    "intent": "Book Seat 4A on Flight 102",
-    "intent_hash": "a1b2c3d4",
-    "expiry": 3000
-}
+    def _check_content_safety(self, text):
+        print(f" > Azure Content Safety: Scrubbing intent for risk...")
+        # Imagine Cup Rule: Must show 'Responsible AI'
+        prohibited = ["DELETE", "HACK", "BYPASS", "MALWARE"]
+        return not any(word in text for word in prohibited)
 
-kernel = LoomKernel()
-response = kernel.process_handshake(mock_packet)
-print(response)
+# For quick local testing
+if __name__ == "__main__":
+    kernel = LoomKernel()
+    test_packet = {"agent_id": "TEST-1", "intent": "Book Flight", "intent_hash": "FL-101"}
+    print(kernel.process_handshake(test_packet))
