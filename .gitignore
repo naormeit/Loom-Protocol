@@ -416,3 +416,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+
+# Python build and metadata artifacts
+*.egg-info/
