@@ -1,0 +1,3 @@
+azure-ai-contentsafety
+azure-identity
+azure-cosmos

@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: loom-protocol
+Version: 1.0.0
+Summary: Agent Transfer Protocol (ATP) middleware for secure agentic transactions
+License-File: LICENSE
+Requires-Dist: azure-ai-contentsafety
+Requires-Dist: azure-identity
+Requires-Dist: azure-cosmos
+Dynamic: license-file

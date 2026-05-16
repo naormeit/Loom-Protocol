@@ -11,7 +11,7 @@ from core.kernel.handshake import LoomKernel
 def simulate_agent_request(kernel, agent_name, intent_hash):
     packet = {
         "agent_id": f"AGENT-{agent_name}",
-        "intent": "HACK AND DELETE EVERYTHING",
+        "intent": "Purchase Limited Edition Item",
         "intent_hash": intent_hash,
         "expiry": 5000
     }
