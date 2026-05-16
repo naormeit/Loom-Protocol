@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loom-protocol"
+version = "1.0.0"
+description = "Agent Transfer Protocol (ATP) middleware for secure agentic transactions"
+dependencies = [
+    "azure-ai-contentsafety",
+    "azure-identity",
+    "azure-cosmos"
+]
+
+[tool.setuptools.packages.find]
+# Explicitly find and include 'core' and 'sdk', while ignoring unrelated folders
+include = ["core*", "sdk*"]
+exclude = ["tests*", "examples*", "docs*"]
