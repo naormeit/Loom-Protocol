@@ -1,25 +1,55 @@
-# **Imagine Cup 2027: Compliance & Eligibility Audit**
+# Imagine Cup Compliance And Readiness Audit
 
-## **1. Core Technical Requirements**
-* [cite_start]**Microsoft AI Integration**: The Loom Protocol is built with and requires at least two (2) Microsoft AI services to operate[cite: 9, 69].
-    * [cite_start]**Service 1**: **Azure AI Foundry** – Utilized for real-time intent parsing and agentic orchestration[cite: 70, 172].
-    * [cite_start]**Service 2**: **Azure Content Safety** – Utilized for intent scrubbing and adhering to Microsoft’s Responsible AI standards[cite: 172, 175].
-* [cite_start]**Functional MVP**: The solution is a fully functional Minimum Viable Product (MVP) that demonstrates customer validation and market fit[cite: 89, 100].
-* [cite_start]**Language**: All submission materials, including the pitch deck, recorded videos, and code documentation, are provided in **English**[cite: 71, 72].
+This document separates implemented MVP behavior from planned production integrations. It should be kept honest; judges can and will ask for evidence.
 
-## **2. Competition Path & Eligibility**
-* [cite_start]**Competition Path**: **Scale Path**[cite: 24, 60].
-    * [cite_start]Loom Protocol is a student-led startup seeking commercial viability[cite: 8].
-    * [cite_start]The business has not received more than $5,000,000 USD in combined dilutive or external funding[cite: 48].
-* [cite_start]**Student Status**: All team members are enrolled students at an accredited educational institution[cite: 36].
-* [cite_start]**Age Requirement**: All participants are 18 years of age or older as of the competition start[cite: 34].
+## Current Implemented Evidence
 
-## **3. Intellectual Property & Standards**
-* [cite_start]**Original Work**: The entry is the original work of the team and does not violate the intellectual property rights of any other entity[cite: 266, 270].
-* **License**: The project is open-sourced under the **Apache License 2.0** to allow for transparent technical review while protecting patent grants.
-* [cite_start]**Resource Independence**: No internal Microsoft property, non-public resources, or work of Microsoft employees was used in the creation of this entry[cite: 55, 273].
+- Functional local MVP with an ATP kernel, API gateway, Python SDK, and limited-inventory stress scenario.
+- Automated tests cover packet validation, unsafe intent rejection, conflict handling, API behavior, SDK behavior, packet signing, and replay protection.
+- Responsible AI seam exists through `core/ai/content_safety.py`; production Azure Content Safety integration is pending.
+- Intent parsing seam exists through `core/ai/intent_parser.py`; production Azure AI Foundry or Azure OpenAI integration is pending.
+- Atomic lock behavior exists through `core/database/ledger.py`; production Azure Cosmos DB conditional writes are pending.
+- Security MVP includes signed packets, nonce, timestamp, freshness window, and replay rejection.
 
-## **4. Judging Alignment**
-* [cite_start]**Category**: **Cybersecurity / Finance**[cite: 78, 79].
-* [cite_start]**Inclusive Design**: Diversity and inclusion principles are reflected in both the product features and the go-to-market approach[cite: 171, 174].
-* [cite_start]**Verification**: The team is prepared for a technical review to walk through the architecture and verify Microsoft AI capabilities[cite: 139, 141].
+## Microsoft AI Services
+
+Target production path:
+
+1. Azure AI Foundry or Azure OpenAI: convert raw agent intent into structured ATP fields.
+2. Azure AI Content Safety: evaluate transaction intent before lock acquisition.
+
+Current repo status:
+
+- Local deterministic adapters are implemented for offline development and tests.
+- Azure service credentials and live adapters still need to be added before submission.
+
+## Microsoft Cloud Services
+
+Target production path:
+
+- Azure Cosmos DB: global conditional lock ledger.
+- Azure Functions or Azure Container Apps: hosted ATP gateway.
+- Microsoft Entra ID: authority link between human, organization, and agent.
+
+Current repo status:
+
+- Local compatibility layers and seams are implemented.
+- Cloud provisioning, deployment runbooks, and integration tests remain required.
+
+## Eligibility And Submission Notes
+
+- Submission materials should be in English.
+- Team eligibility, student status, age requirements, funding status, and IP ownership must be verified by the team before submission.
+- Do not claim live Microsoft Cloud usage until the deployed services are demonstrably used in the product path.
+
+## Readiness Gaps Before A Serious Submission
+
+- Live Azure AI integrations.
+- Cosmos DB conditional write adapter.
+- Hosted public demo endpoint.
+- CI pipeline.
+- TypeScript SDK.
+- Architecture diagram.
+- Pitch deck and demo video.
+- Founder-led validation evidence.
+- Clear buyer, pricing, and wedge-market documentation.

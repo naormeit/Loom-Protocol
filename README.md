@@ -1,31 +1,159 @@
-# Loom Protocol (ATP) 🧵
-**The High-Concurrency Atomic Transaction Layer for the Agentic Economy**
+# Loom Protocol
 
-## 🚀 The Vision
-Loom is the world’s first **Agent Transfer Protocol (ATP)**. As AI agents begin to dominate global commerce, existing human-centric web infrastructure (HTTP) faces systemic "gridlock." Loom provides the high-speed, atomic handshake required to ensure that when millions of agents compete for a single resource, the transaction is secure, verified, and successful.
+**ATP: an atomic reservation layer for AI agents competing for finite resources.**
 
-## 🛠️ Microsoft AI Integration (Imagine Cup 2027)
-[cite_start]This project is architected to meet and exceed the Microsoft Imagine Cup "Scale Path" requirements[cite: 25, 47, 69]:
-* [cite_start]**Azure AI Foundry**: Powers the **Intent Gateway** to parse raw agentic planning into structured ATP packets[cite: 70, 89].
-* [cite_start]**Azure Content Safety**: Provides real-time **Intent Scrubbing** to prevent malicious or unauthorized agentic transactions[cite: 70, 172].
-* [cite_start]**Azure Cosmos DB**: Acts as the **Global State Ledger** for sub-10ms atomic resource locking[cite: 175, 184].
+Loom helps marketplaces, commerce platforms, booking systems, and agent builders avoid the same failure mode: many autonomous agents trying to buy, book, or reserve one scarce item at the same time.
 
-## 🏗️ Core Architecture
-1. **ATP Ingress**: Receives intent-based packets from autonomous agents.
-2. **Conflict Resolver**: Uses a Nash Equilibrium algorithm to resolve resource collisions.
-3. **Atomic Handshake**: Executes the transaction only after a verified "Lock" is secured.
+The current MVP focuses on **limited-inventory agent commerce**. A shopping agent sends intent to Loom before hitting the final vendor checkout. Loom validates the packet, checks authority, screens unsafe intent, attempts an atomic lock, and returns either a confirmed lock or a negotiation payload.
 
-## ⚡ Quick Start: The "Agent War" Simulation
-Experience the protocol in action by simulating a high-concurrency collision between two agents.
+## What Works Today
 
-### Prerequisites
-* Python 3.8+
-* A cloned instance of this repository
+- Local ATP kernel with packet validation and stable response contracts.
+- Thread-safe local atomic ledger that proves one-winner lock behavior.
+- Local intent parser and content-safety checker.
+- Optional HMAC-SHA256 packet signing with nonce and timestamp replay protection.
+- Local HTTP API gateway: `POST /v1/handshake`.
+- Python SDK client for agent integrations.
+- Stress and scenario demos for limited-inventory collisions.
+- Unit tests for success, conflict, safety, validation, API, SDK, signing, and replay protection.
 
-### Run the Collision Test
+## Product Wedge
+
+Loom starts with limited-inventory drops:
+
+1. Hundreds or thousands of agents attempt to reserve the same resource.
+2. Loom pre-clears the intent before checkout.
+3. One agent receives an atomic lock.
+4. Other agents receive a structured conflict response with retry guidance.
+5. The vendor avoids duplicate reservations, retry storms, and ambiguous partial state.
+
+This wedge is intentionally concrete. The long-term protocol vision is broader, but the MVP must first solve one painful workflow well.
+
+## Quick Start
+
+### Run Tests
+
 ```powershell
-# Navigate to the root directory
-cd Loom-Protocol
+python -m unittest discover -s tests -p "test*.py"
+```
 
-# Execute the stress test
-python tests/stress/collision_test.py
+### Run The Two-Agent Collision Demo
+
+```powershell
+python tests\stress\collision_test.py
+```
+
+### Start The Local API Gateway
+
+```powershell
+python -m core.api.server
+```
+
+The gateway starts at `http://127.0.0.1:8080` by default.
+
+Health check:
+
+```powershell
+curl http://127.0.0.1:8080/health
+```
+
+Handshake:
+
+```powershell
+curl -X POST http://127.0.0.1:8080/v1/handshake `
+  -H "Content-Type: application/json" `
+  -d "{\"agent_id\":\"SHOPPING-AGENT-1\",\"intent\":\"Purchase one limited item\",\"intent_hash\":\"DROP-001\",\"expiry\":5000}"
+```
+
+### Run The Limited Inventory Scenario
+
+Start the API gateway in one terminal, then run:
+
+```powershell
+python examples\scenarios\limited_inventory_drop.py --agents 100
+```
+
+Expected result: one secured lock and the remaining agents receiving conflict negotiation responses.
+
+## Signed Packets
+
+Set a shared secret and require signatures:
+
+```powershell
+$env:LOOM_REQUIRE_SIGNATURE="true"
+$env:LOOM_SHARED_SECRET="dev-secret"
+python -m core.api.server
+```
+
+Use the SDK to sign packets:
+
+```python
+from loom_protocol import LoomClient
+
+client = LoomClient("http://127.0.0.1:8080", shared_secret="dev-secret")
+response = client.reserve(
+    agent_id="SHOPPING-AGENT-42",
+    resource_id="DROP-SURFACE-001",
+    intent="Purchase one Surface Pro from the limited drop",
+)
+print(response)
+```
+
+## API Contract
+
+`POST /v1/handshake`
+
+Required fields:
+
+- `agent_id`: unique agent identifier.
+- `intent`: natural language transaction intent.
+- `intent_hash`: resource identifier or resource-intent hash.
+- `expiry`: lock expiry in milliseconds.
+
+Optional signed-packet fields:
+
+- `nonce`
+- `timestamp`
+- `signature`
+
+Status codes:
+
+- `201`: atomic lock secured.
+- `409`: active lock conflict; response includes `negotiation_payload`.
+- `403`: unsafe intent rejected.
+- `401`: authority/signature failure.
+- `400`: invalid packet.
+
+## Microsoft Imagine Cup Direction
+
+The local MVP is built so the production path can use Microsoft Cloud services cleanly:
+
+- Azure AI Foundry or Azure OpenAI for structured intent parsing.
+- Azure AI Content Safety for intent risk screening.
+- Azure Cosmos DB for globally distributed conditional locks.
+- Azure Functions or Azure Container Apps for the ATP gateway.
+- Microsoft Entra ID for agent authority and enterprise identity.
+
+Current status: the repo contains the local implementation and integration seams. Azure credentials, deployed resources, and production adapters are still required before claiming live Microsoft Cloud execution.
+
+## Repository Map
+
+- `core/kernel/handshake.py`: ATP handshake orchestration.
+- `core/models.py`: packet and response models.
+- `core/ai/`: local intent and safety services.
+- `core/security/`: signing, signature verification, and replay protection.
+- `core/database/`: local atomic ledger and Cosmos-compatible adapter.
+- `core/api/`: local HTTP API gateway.
+- `sdk/python/`: Python client SDK.
+- `examples/`: agent and scenario demos.
+- `tests/`: unit and integration tests.
+- `docs/competition/score_to_10_plan.md`: roadmap to a judge-ready 10/10 submission.
+
+## Next Production Milestones
+
+- Implement real Azure AI Foundry / Azure OpenAI intent parsing.
+- Implement real Azure AI Content Safety evaluation.
+- Replace local ledger with Cosmos DB conditional writes in Azure mode.
+- Add TypeScript SDK.
+- Add CI and Azure deployment infrastructure.
+- Collect founder-led validation from marketplaces, agent builders, and platform teams.
