@@ -126,7 +126,12 @@ Status codes:
 
 ## Microsoft Imagine Cup Direction
 
-The local MVP is built so the production path can use Microsoft Cloud services cleanly:
+The MVP now supports two runtime modes:
+
+- `LOOM_MODE=local`: deterministic local adapters for development, tests, and offline demos.
+- `LOOM_MODE=azure`: production adapters for Azure OpenAI / Azure AI Foundry-style chat deployments, Azure AI Content Safety, and Azure Cosmos DB.
+
+The production path uses Microsoft Cloud services cleanly:
 
 - Azure AI Foundry or Azure OpenAI for structured intent parsing.
 - Azure AI Content Safety for intent risk screening.
@@ -134,7 +139,25 @@ The local MVP is built so the production path can use Microsoft Cloud services c
 - Azure Functions or Azure Container Apps for the ATP gateway.
 - Microsoft Entra ID for agent authority and enterprise identity.
 
-Current status: the repo contains the local implementation and integration seams. Azure credentials, deployed resources, and production adapters are still required before claiming live Microsoft Cloud execution.
+Current status: the repo contains local mode and Azure-mode adapters. Azure credentials, deployed resources, and live integration testing are still required before claiming a production deployment.
+
+### Azure Mode Configuration
+
+```powershell
+$env:LOOM_MODE="azure"
+$env:AZURE_OPENAI_ENDPOINT="https://<resource>.openai.azure.com"
+$env:AZURE_OPENAI_API_KEY="<key>"
+$env:AZURE_OPENAI_DEPLOYMENT="<deployment>"
+$env:CONTENT_SAFETY_ENDPOINT="https://<resource>.cognitiveservices.azure.com"
+$env:CONTENT_SAFETY_KEY="<key>"
+$env:COSMOS_ENDPOINT="https://<account>.documents.azure.com:443/"
+$env:COSMOS_KEY="<key>"
+$env:COSMOS_DATABASE="loom"
+$env:COSMOS_CONTAINER="locks"
+python -m core.api.server
+```
+
+Cosmos DB container expectation: use `/resource_id` as the partition key. The Azure adapter creates lock documents with `id` and `resource_id` equal to the ATP `intent_hash`.
 
 ## Repository Map
 
@@ -142,7 +165,7 @@ Current status: the repo contains the local implementation and integration seams
 - `core/models.py`: packet and response models.
 - `core/ai/`: local intent and safety services.
 - `core/security/`: signing, signature verification, and replay protection.
-- `core/database/`: local atomic ledger and Cosmos-compatible adapter.
+- `core/database/`: local atomic ledger and Cosmos DB adapter.
 - `core/api/`: local HTTP API gateway.
 - `sdk/python/`: Python client SDK.
 - `examples/`: agent and scenario demos.
@@ -151,9 +174,6 @@ Current status: the repo contains the local implementation and integration seams
 
 ## Next Production Milestones
 
-- Implement real Azure AI Foundry / Azure OpenAI intent parsing.
-- Implement real Azure AI Content Safety evaluation.
-- Replace local ledger with Cosmos DB conditional writes in Azure mode.
 - Add TypeScript SDK.
 - Add CI and Azure deployment infrastructure.
 - Collect founder-led validation from marketplaces, agent builders, and platform teams.
