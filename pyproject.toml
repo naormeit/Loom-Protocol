@@ -13,7 +13,8 @@ dependencies = []
 azure = [
     "azure-ai-contentsafety",
     "azure-identity",
-    "azure-cosmos"
+    "azure-cosmos",
+    "openai"
 ]
 
 [project.scripts]

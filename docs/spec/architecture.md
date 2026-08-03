@@ -19,10 +19,10 @@ Loom is an atomic reservation middleware layer for AI agents. The first MVP use 
 | --- | --- | --- |
 | Gateway | `core/api/server.py` | Azure Functions or Azure Container Apps |
 | Kernel | `core/kernel/handshake.py` | Same orchestration logic |
-| Intent parser | `core/ai/intent_parser.py` | Azure AI Foundry or Azure OpenAI |
+| Intent parser | `core/ai/intent_parser.py` | Azure OpenAI deployment managed through Azure AI Foundry |
 | Safety checker | `core/ai/content_safety.py` | Azure AI Content Safety |
 | Authority | `core/security/authority.py` | Microsoft Entra ID plus packet signatures |
-| Ledger | `core/database/ledger.py` | Azure Cosmos DB conditional writes |
+| Ledger | `core/database/ledger.py` | Azure Cosmos DB conditional create/replace writes |
 | SDK | `sdk/python/loom_protocol/client.py` | Python and TypeScript SDKs |
 
 ## Data Flow
@@ -41,7 +41,8 @@ Agent -> SDK -> ATP Gateway -> Authority Check -> Intent Parser
 
 ## Production Requirements
 
-- Cosmos DB unique key or ETag-based conditional writes.
+- Cosmos DB container partitioned by `/resource_id`.
+- Cosmos DB create-item path for fresh locks and ETag guarded replace path for expired locks.
 - Multi-region latency and consistency measurements.
 - Azure AI service telemetry and failure handling.
 - Rate limiting and abuse controls.

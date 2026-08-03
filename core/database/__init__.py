@@ -1,3 +1,3 @@
-from core.database.ledger import LocalAtomicLedger, LockRecord
+from core.database.ledger import CosmosAtomicLedger, LocalAtomicLedger, LockRecord
 
-__all__ = ["LocalAtomicLedger", "LockRecord"]
+__all__ = ["CosmosAtomicLedger", "LocalAtomicLedger", "LockRecord"]

@@ -2,13 +2,44 @@ import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
 
+from core.ai import AzureContentSafety, AzureOpenAIIntentParser
 from core.config import AppConfig
+from core.database import CosmosAtomicLedger
 from core.kernel.handshake import LoomKernel
 from core.security import AuthorityVerifier
 
 
 def create_kernel_from_config(config: AppConfig) -> LoomKernel:
+    mode = config.mode.strip().lower()
+    intent_parser = None
+    safety_checker = None
+    db = None
+
+    if mode == "azure":
+        intent_parser = AzureOpenAIIntentParser(
+            endpoint=config.azure_openai_endpoint,
+            api_key=config.azure_openai_api_key,
+            api_version=config.azure_openai_api_version,
+            deployment=config.azure_openai_deployment,
+        )
+        safety_checker = AzureContentSafety(
+            endpoint=config.content_safety_endpoint,
+            key=config.content_safety_key,
+            block_threshold=config.content_safety_block_threshold,
+        )
+        db = CosmosAtomicLedger(
+            endpoint=config.cosmos_endpoint,
+            key=config.cosmos_key,
+            database_name=config.cosmos_database,
+            container_name=config.cosmos_container,
+        )
+    elif mode != "local":
+        raise ValueError("LOOM_MODE must be either 'local' or 'azure'")
+
     return LoomKernel(
+        db=db,
+        intent_parser=intent_parser,
+        safety_checker=safety_checker,
         authority_verifier=AuthorityVerifier(
             shared_secret=config.shared_secret,
             require_signature=config.require_signature,
