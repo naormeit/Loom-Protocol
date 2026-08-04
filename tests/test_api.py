@@ -35,6 +35,25 @@ class APITests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertIn(b"loom-atp", response.read())
 
+    def test_options_preflight_allows_website_requests(self):
+        http_request = request.Request(
+            f"{self.base_url}/v1/handshake",
+            headers={
+                "Origin": "http://127.0.0.1:5500",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+            method="OPTIONS",
+        )
+
+        with request.urlopen(http_request, timeout=5) as response:
+            self.assertEqual(response.status, 204)
+            self.assertEqual(
+                response.headers["Access-Control-Allow-Origin"],
+                "http://127.0.0.1:5500",
+            )
+            self.assertIn("POST", response.headers["Access-Control-Allow-Methods"])
+
     def test_python_sdk_can_reserve_resource(self):
         client = LoomClient(self.base_url)
 

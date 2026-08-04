@@ -22,10 +22,12 @@ Last updated: 2026-08-03
 
 - Website folder: `website/`.
 - Current entry point: `website/index.html`.
+- Root redirect: `index.html` sends Live Server root visitors to `website/`.
 - Styling: `website/styles.css`.
 - Interaction: `website/app.js`.
 - The site is static and can be opened directly in a browser.
 - First-screen experience: product positioning plus an interactive agent drop simulator.
+- Simulator contract: checks `http://127.0.0.1:8080/health`; when the Python API is running, it sends real `POST /v1/handshake` packets and displays actual lock/conflict counts; otherwise it must clearly label visual fallback mode.
 
 ## Messaging Guardrails
 
@@ -33,6 +35,7 @@ Last updated: 2026-08-03
 - Phrase Azure services as production path or target until live credentials, deployed resources, and integration testing exist.
 - Keep the wedge narrow: limited-inventory agent commerce first, broader protocol vision second.
 - Prioritize proof artifacts: demo, API contract, metrics, validation evidence, and Microsoft AI usage.
+- Always distinguish `Implemented locally`, `Verified in repo`, and `Production path` when presenting judge-facing claims.
 
 ## Near-Term Website Tasks
 

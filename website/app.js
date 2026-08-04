@@ -6,9 +6,14 @@ const resourceInput = document.querySelector("#resourceId");
 const runButton = document.querySelector("#runSimulation");
 const resetButton = document.querySelector("#resetSimulation");
 const runStatus = document.querySelector("#runStatus");
+const apiMode = document.querySelector("#apiMode");
+const lastResponse = document.querySelector("#lastResponse");
 const locksSecured = document.querySelector("#locksSecured");
 const conflicts = document.querySelector("#conflicts");
 const latency = document.querySelector("#latency");
+const latencyLabel = document.querySelector("#latencyLabel");
+
+const API_BASE_URL = "http://127.0.0.1:8080";
 
 const colors = {
   background: "#111a18",
@@ -25,6 +30,8 @@ let agents = [];
 let animationFrame = null;
 let startTime = 0;
 let phase = "ready";
+let backendAvailable = false;
+let lastRunSource = "visual";
 
 function fitCanvas() {
   const ratio = window.devicePixelRatio || 1;
@@ -119,7 +126,10 @@ function drawLabels(width, height) {
 
   context.fillStyle = colors.muted;
   context.font = "600 13px Inter, system-ui, sans-serif";
-  context.fillText("ATP packet race: intent -> safety -> atomic ledger -> lock or negotiation", 24, 58);
+  const modeLabel = lastRunSource === "api"
+    ? "Live API requests: intent -> safety -> atomic ledger -> lock or negotiation"
+    : "Visual fallback: intent -> safety -> atomic ledger -> lock or negotiation";
+  context.fillText(modeLabel, 24, 58);
 
   context.fillStyle = "rgba(216, 154, 43, 0.92)";
   context.fillText("Winner receives 201 Atomic Lock Secured", width * 0.54, height - 36);
@@ -196,6 +206,7 @@ function updateMetrics() {
   locksSecured.textContent = "1";
   conflicts.textContent = String(Math.max(0, count - 1));
   latency.textContent = `${estimatedLatency}ms`;
+  latencyLabel.textContent = "visual estimate";
 }
 
 function reset() {
@@ -203,19 +214,98 @@ function reset() {
   phase = "ready";
   startTime = 0;
   runStatus.textContent = "Ready";
+  lastRunSource = backendAvailable ? "api" : "visual";
   agents = createAgents(Number(agentInput.value));
   updateMetrics();
+  lastResponse.textContent = "Not run yet";
   draw();
 }
 
-function runSimulation() {
+async function checkBackend() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, { cache: "no-store" });
+    const payload = await response.json();
+    backendAvailable = response.ok && payload.service === "loom-atp";
+  } catch (error) {
+    backendAvailable = false;
+  }
+
+  apiMode.textContent = backendAvailable ? "Live API connected" : "Visual fallback";
+  lastRunSource = backendAvailable ? "api" : "visual";
+  draw();
+}
+
+async function runLiveHandshake(count) {
+  const selectedResource = resourceInput.value;
+  const resourceLabel = resourceInput.options[resourceInput.selectedIndex].text;
+  const runResourceId = `${selectedResource}-${Date.now()}`;
+  const startedAt = performance.now();
+  const requests = Array.from({ length: count }, (_, index) => {
+    const packet = {
+      agent_id: `WEB-AGENT-${index + 1}`,
+      intent: `Purchase one unit from ${resourceLabel}`,
+      intent_hash: runResourceId,
+      expiry: 5000
+    };
+
+    return fetch(`${API_BASE_URL}/v1/handshake`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(packet)
+    })
+      .then((response) => response.json())
+      .catch((error) => ({ status: 0, message: error.message }));
+  });
+
+  const responses = await Promise.all(requests);
+  const elapsedMs = Math.round(performance.now() - startedAt);
+  const lockCount = responses.filter((response) => response.status === 201).length;
+  const conflictCount = responses.filter((response) => response.status === 409).length;
+  const errorCount = responses.length - lockCount - conflictCount;
+
+  locksSecured.textContent = String(lockCount);
+  conflicts.textContent = String(conflictCount);
+  latency.textContent = `${elapsedMs}ms`;
+  latencyLabel.textContent = "live API round trip";
+  lastResponse.textContent = errorCount
+    ? `${errorCount} request errors`
+    : `${lockCount} locked, ${conflictCount} negotiated`;
+}
+
+function runVisualFallback(count) {
+  const estimatedLatency = Math.round(42 + Math.log2(count) * 12);
+  locksSecured.textContent = "1";
+  conflicts.textContent = String(Math.max(0, count - 1));
+  latency.textContent = `${estimatedLatency}ms`;
+  latencyLabel.textContent = "visual estimate";
+  lastResponse.textContent = "API not running";
+}
+
+async function runSimulation() {
   cancelAnimationFrame(animationFrame);
+  await checkBackend();
   phase = "running";
   startTime = performance.now();
   runStatus.textContent = "Running";
-  agents = createAgents(Number(agentInput.value));
-  updateMetrics();
+  const count = Number(agentInput.value);
+  agents = createAgents(count);
+  agentOutput.value = count;
+  lastRunSource = backendAvailable ? "api" : "visual";
   draw();
+
+  if (backendAvailable) {
+    try {
+      await runLiveHandshake(count);
+      runStatus.textContent = "Resolved";
+      return;
+    } catch (error) {
+      backendAvailable = false;
+      apiMode.textContent = "Visual fallback";
+      lastRunSource = "visual";
+    }
+  }
+
+  runVisualFallback(count);
 }
 
 agentInput.addEventListener("input", reset);
@@ -238,3 +328,4 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 fitCanvas();
 reset();
+checkBackend();

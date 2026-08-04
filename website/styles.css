@@ -80,11 +80,11 @@ nav a:focus-visible {
 
 .hero {
   display: grid;
-  min-height: calc(100vh - 64px);
+  min-height: calc(92vh - 64px);
   grid-template-columns: minmax(0, 0.86fr) minmax(360px, 1.14fr);
   gap: clamp(28px, 5vw, 70px);
   align-items: center;
-  padding: clamp(28px, 5vw, 70px) clamp(18px, 4vw, 56px);
+  padding: clamp(24px, 4vw, 52px) clamp(18px, 4vw, 56px);
 }
 
 .hero-copy {
@@ -109,7 +109,7 @@ p {
 
 h1 {
   margin-bottom: 20px;
-  font-size: clamp(2.6rem, 6vw, 6.4rem);
+  font-size: clamp(2.6rem, 5.4vw, 5.8rem);
   line-height: 0.95;
   letter-spacing: 0;
 }
@@ -220,6 +220,32 @@ dd {
 .panel-head h2 {
   margin: 0;
   font-size: clamp(1.35rem, 2vw, 2rem);
+}
+
+.api-proof {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.api-proof div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 18px;
+  background: #fffdf8;
+}
+
+.proof-label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.api-proof strong {
+  font-size: 0.95rem;
 }
 
 .status-pill {
@@ -383,7 +409,8 @@ output {
 }
 
 .score-grid,
-.proof-grid {
+.proof-grid,
+.status-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
@@ -394,10 +421,28 @@ output {
 }
 
 .score-grid div,
+.status-grid article,
 .proof-grid article {
   min-height: 132px;
   padding: 18px;
   background: var(--surface);
+}
+
+.status-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.status-grid span {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--coral);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-grid p {
+  color: var(--muted);
 }
 
 .score-grid strong,
@@ -465,9 +510,11 @@ output {
   }
 
   .signal-strip,
+  .api-proof,
   .metrics,
   .flow-list,
   .score-grid,
+  .status-grid,
   .proof-grid {
     grid-template-columns: 1fr;
   }

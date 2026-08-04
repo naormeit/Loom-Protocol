@@ -57,6 +57,14 @@ def create_handler(kernel: LoomKernel) -> Callable:
                 return
             self._send_json(404, {"error": "not_found"})
 
+        def do_OPTIONS(self):
+            self.send_response(204)
+            self._send_cors_headers()
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.end_headers()
+
         def do_POST(self):
             if self.path != "/v1/handshake":
                 self._send_json(404, {"error": "not_found"})
@@ -90,10 +98,21 @@ def create_handler(kernel: LoomKernel) -> Callable:
         def _send_json(self, status_code, payload):
             encoded = json.dumps(payload).encode("utf-8")
             self.send_response(status_code)
+            self._send_cors_headers()
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(encoded)))
             self.end_headers()
             self.wfile.write(encoded)
+
+        def _send_cors_headers(self):
+            origin = self.headers.get("Origin")
+            allowed_origins = {
+                "http://127.0.0.1:5500",
+                "http://localhost:5500",
+            }
+            if origin in allowed_origins:
+                self.send_header("Access-Control-Allow-Origin", origin)
+                self.send_header("Vary", "Origin")
 
     return LoomRequestHandler
 
