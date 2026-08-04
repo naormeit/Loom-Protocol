@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Loom Protocol | Atomic reservations for AI agents</title>
+    <meta
+      name="description"
+      content="Loom Protocol is an atomic reservation layer for AI agents competing for scarce inventory, bookings, and transactional resources."
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Loom Protocol home">
+        <span class="brand-mark" aria-hidden="true">LP</span>
+        <span>Loom Protocol</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#demo">Demo</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#competition">Imagine Cup</a>
+        <a href="#proof">Proof</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Microsoft Imagine Cup 2027 project</p>
+          <h1 id="hero-title">Atomic reservations for AI agents competing over scarce resources.</h1>
+          <p class="lede">
+            Loom pre-clears agent intent, screens safety, verifies authority, and resolves
+            one-winner locks before agents hit vendor checkout.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="button primary" href="#demo">Run collision demo</a>
+            <a class="button secondary" href="#architecture">View architecture</a>
+          </div>
+          <dl class="signal-strip" aria-label="Current product signals">
+            <div>
+              <dt>Use case</dt>
+              <dd>Limited-inventory commerce</dd>
+            </div>
+            <div>
+              <dt>Endpoint</dt>
+              <dd>POST /v1/handshake</dd>
+            </div>
+            <div>
+              <dt>Stack</dt>
+              <dd>Python, Azure AI, Cosmos DB</dd>
+            </div>
+          </dl>
+        </div>
+
+        <section class="sim-panel" id="demo" aria-labelledby="demo-title">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Live protocol sketch</p>
+              <h2 id="demo-title">Agent drop simulator</h2>
+            </div>
+            <span class="status-pill" id="runStatus">Ready</span>
+          </div>
+
+          <canvas id="agentCanvas" width="920" height="520" aria-label="Animated view of agents racing for one locked resource"></canvas>
+
+          <form class="controls" aria-label="Simulation controls">
+            <label>
+              Agents
+              <input id="agentCount" type="range" min="20" max="1000" step="20" value="240">
+              <output id="agentOutput" for="agentCount">240</output>
+            </label>
+            <label>
+              Resource
+              <select id="resourceId">
+                <option value="DROP-SURFACE-001">Surface device drop</option>
+                <option value="DROP-TICKET-042">Concert ticket block</option>
+                <option value="DROP-GPU-009">GPU inventory release</option>
+              </select>
+            </label>
+            <button class="button primary" id="runSimulation" type="button">Run</button>
+            <button class="button secondary" id="resetSimulation" type="button">Reset</button>
+          </form>
+
+          <div class="metrics" aria-label="Simulation metrics">
+            <div>
+              <span class="metric-value" id="locksSecured">1</span>
+              <span class="metric-label">lock secured</span>
+            </div>
+            <div>
+              <span class="metric-value" id="conflicts">239</span>
+              <span class="metric-label">conflicts negotiated</span>
+            </div>
+            <div>
+              <span class="metric-value" id="latency">86ms</span>
+              <span class="metric-label">simulated resolution</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="problem-band" aria-labelledby="problem-title">
+        <div class="section-inner two-column">
+          <div>
+            <p class="eyebrow">The failure mode</p>
+            <h2 id="problem-title">Agent commerce breaks when every bot reaches checkout at once.</h2>
+          </div>
+          <div class="copy-stack">
+            <p>
+              Direct vendor APIs were not designed for thousands of autonomous shoppers
+              reserving one scarce item at the same time. The result is duplicate holds,
+              retry storms, ambiguous partial state, and no machine-readable path for
+              the losing agents.
+            </p>
+            <p>
+              Loom moves the concurrency decision upstream. Agents submit intent first.
+              The protocol returns either a confirmed lock or a structured negotiation
+              payload for safe retry.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-inner" id="architecture" aria-labelledby="architecture-title">
+        <div class="section-heading">
+          <p class="eyebrow">Protocol path</p>
+          <h2 id="architecture-title">One request, five gates, one clear result.</h2>
+        </div>
+        <ol class="flow-list">
+          <li>
+            <span>01</span>
+            <strong>Intent packet</strong>
+            <p>Agent submits `agent_id`, `intent`, `intent_hash`, and lock expiry.</p>
+          </li>
+          <li>
+            <span>02</span>
+            <strong>Authority</strong>
+            <p>Signature mode verifies packet authenticity and rejects replay attempts.</p>
+          </li>
+          <li>
+            <span>03</span>
+            <strong>Microsoft AI</strong>
+            <p>Intent parsing and content safety prepare the packet for transaction logic.</p>
+          </li>
+          <li>
+            <span>04</span>
+            <strong>Atomic ledger</strong>
+            <p>Local mode proves one-winner behavior. Azure mode targets Cosmos DB locks.</p>
+          </li>
+          <li>
+            <span>05</span>
+            <strong>Negotiation</strong>
+            <p>Losing agents receive `409` plus an alternative resource and retry backoff.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section-inner split-proof" id="competition" aria-labelledby="competition-title">
+        <div>
+          <p class="eyebrow">Judge-ready direction</p>
+          <h2 id="competition-title">Built around a demo a strict reviewer can understand in two minutes.</h2>
+          <p>
+            The first submission story is deliberately narrow: limited-inventory drops
+            where agent buyers must be coordinated before checkout. That wedge makes
+            concurrency, safety, identity, Microsoft AI usage, and measurable proof visible.
+          </p>
+        </div>
+        <div class="score-grid" aria-label="Competition focus areas">
+          <div>
+            <strong>Technical proof</strong>
+            <span>Tests, stress demo, API contract, SDK</span>
+          </div>
+          <div>
+            <strong>Microsoft path</strong>
+            <span>Azure OpenAI, Content Safety, Cosmos DB, Entra ID</span>
+          </div>
+          <div>
+            <strong>Business wedge</strong>
+            <span>Marketplace operators and agent-commerce platforms</span>
+          </div>
+          <div>
+            <strong>Validation</strong>
+            <span>Founder-led interviews, pilot targets, evidence log</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="proof-band" id="proof" aria-labelledby="proof-title">
+        <div class="section-inner">
+          <div class="section-heading">
+            <p class="eyebrow">Current proof</p>
+            <h2 id="proof-title">What the repository can show today.</h2>
+          </div>
+          <div class="proof-grid">
+            <article>
+              <h3>Local ATP kernel</h3>
+              <p>Packet validation, authority checks, safety screening, and stable response contracts.</p>
+            </article>
+            <article>
+              <h3>One-winner locking</h3>
+              <p>Thread-safe local ledger and collision tests demonstrate deterministic contention behavior.</p>
+            </article>
+            <article>
+              <h3>API gateway</h3>
+              <p>`POST /v1/handshake` returns `201`, `409`, `403`, `401`, or `400` for agent workflows.</p>
+            </article>
+            <article>
+              <h3>Python SDK</h3>
+              <p>Agent integrations can reserve scarce resources through a simple client call.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Loom Protocol</span>
+      <span>Atomic reservation middleware for agentic transactions.</span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
