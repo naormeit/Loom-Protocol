@@ -1,6 +1,6 @@
 # Azure Mode Runbook
 
-This runbook describes how to run Loom with production Azure adapters.
+This runbook describes how to run Loom with production Azure adapters. Use it together with `docs/operations/deployment_runbook.md` when deploying the API image to Azure Container Apps.
 
 ## Required Resources
 
@@ -9,6 +9,7 @@ This runbook describes how to run Loom with production Azure adapters.
 - Azure Cosmos DB for NoSQL account.
 - Cosmos database, default `loom`.
 - Cosmos container, default `locks`, partition key `/resource_id`.
+- Loom API container image built from this repository and pushed to a reachable registry.
 
 ## Environment
 
@@ -39,6 +40,29 @@ Then, from another terminal:
 python examples\scenarios\limited_inventory_drop.py --agents 100
 ```
 
+## Deploy Through Container Apps
+
+The Bicep template expects the real Loom image as the required `image` parameter:
+
+```powershell
+az deployment group create `
+  --resource-group loom-protocol-rg `
+  --template-file infra/main.bicep `
+  --parameters `
+    image="<registry>.azurecr.io/loom-protocol:<tag>" `
+    azureOpenAiEndpoint="$env:AZURE_OPENAI_ENDPOINT" `
+    azureOpenAiApiKey="$env:AZURE_OPENAI_API_KEY" `
+    azureOpenAiDeployment="$env:AZURE_OPENAI_DEPLOYMENT" `
+    contentSafetyEndpoint="$env:CONTENT_SAFETY_ENDPOINT" `
+    contentSafetyKey="$env:CONTENT_SAFETY_KEY" `
+    cosmosEndpoint="$env:COSMOS_ENDPOINT" `
+    cosmosKey="$env:COSMOS_KEY" `
+    cosmosDatabase="$env:COSMOS_DATABASE" `
+    cosmosContainer="$env:COSMOS_CONTAINER"
+```
+
+If the image lives in private ACR, configure Container Apps registry access before treating the app as deployable. This phase wires the app and environment values; it does not yet provision the Azure AI, Cosmos, Entra, or registry resources themselves.
+
 ## Verification Evidence To Capture
 
 - API startup logs showing `LOOM_MODE=azure`.
@@ -46,6 +70,8 @@ python examples\scenarios\limited_inventory_drop.py --agents 100
 - Azure AI Content Safety request metrics for intent screening.
 - Cosmos DB item count and request metrics for the `locks` container.
 - Scenario output showing one secured lock and negotiated conflicts.
+- Deployed Container App URL from the Bicep `containerAppUrl` output.
+- Health check output from the Bicep `healthCheckUrl` output.
 
 ## Failure Signals
 
