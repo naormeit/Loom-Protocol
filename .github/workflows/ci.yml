@@ -9,7 +9,8 @@ on:
       - main
 
 jobs:
-  test:
+  python:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -37,9 +38,157 @@ jobs:
           print('imports-ok')
           PY
 
+      - name: Compile Python entrypoints and examples
+        run: |
+          python -m py_compile \
+            run.py \
+            core/api/server.py \
+            examples/bots/simple_buyer.py \
+            examples/scenarios/limited_inventory_drop.py
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test*.py"
 
-      - name: Compile the Python entrypoints
+      - name: Run local example smoke
+        run: python examples/bots/simple_buyer.py
+
+      - name: Run API scenario smoke
         run: |
-          python -m py_compile run.py core/api/server.py
+          set -euo pipefail
+          LOOM_PORT=8090 python -m core.api.server > loom-api.log 2>&1 &
+          SERVER_PID=$!
+
+          cleanup() {
+            kill "$SERVER_PID" 2>/dev/null || true
+            wait "$SERVER_PID" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          python - <<'PY'
+          import time
+          from pathlib import Path
+          from urllib import request
+
+          for _ in range(40):
+              try:
+                  with request.urlopen("http://127.0.0.1:8090/health", timeout=1) as response:
+                      if response.status == 200:
+                          break
+              except Exception:
+                  time.sleep(0.25)
+          else:
+              print(Path("loom-api.log").read_text(encoding="utf-8"))
+              raise SystemExit("Loom API did not become healthy")
+          PY
+
+          python examples/scenarios/limited_inventory_drop.py \
+            --base-url http://127.0.0.1:8090 \
+            --agents 20 \
+            --resource-id CI-DROP \
+            --require-one-winner
+
+  website:
+    name: Website static checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate website assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          required_files = [
+              Path("website/index.html"),
+              Path("website/app.js"),
+              Path("website/styles.css"),
+              Path("website/README.md"),
+          ]
+          missing = [str(path) for path in required_files if not path.is_file()]
+          if missing:
+              raise SystemExit(f"missing website files: {', '.join(missing)}")
+
+          html = Path("website/index.html").read_text(encoding="utf-8")
+          js = Path("website/app.js").read_text(encoding="utf-8")
+          css = Path("website/styles.css").read_text(encoding="utf-8")
+
+          html_needles = [
+              "<title>Loom Protocol",
+              'id="agentCanvas"',
+              'id="runSimulation"',
+              'href="styles.css"',
+              'src="app.js"',
+          ]
+          js_needles = [
+              'const API_BASE_URL = "http://127.0.0.1:8080";',
+              'fetch(`${API_BASE_URL}/health`',
+              'fetch(`${API_BASE_URL}/v1/handshake`',
+              'runButton.addEventListener("click"',
+          ]
+          css_needles = [
+              ".hero",
+              ".sim-panel",
+              "@media",
+          ]
+
+          for label, content, needles in [
+              ("HTML", html, html_needles),
+              ("JavaScript", js, js_needles),
+              ("CSS", css, css_needles),
+          ]:
+              missing_needles = [needle for needle in needles if needle not in content]
+              if missing_needles:
+                  raise SystemExit(f"{label} check failed; missing: {missing_needles}")
+
+          print("website-static-ok")
+          PY
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build --tag loom-protocol:ci .
+
+      - name: Smoke test API image
+        run: |
+          set -euo pipefail
+          CONTAINER_ID=$(docker run --detach --publish 8091:8080 --env LOOM_HOST=0.0.0.0 loom-protocol:ci)
+          cleanup() {
+            docker rm -f "$CONTAINER_ID" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          for _ in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8091/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs "$CONTAINER_ID"
+          exit 1
+
+  infra:
+    name: Bicep validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Bicep template
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az bicep install
+            az bicep build --file infra/main.bicep --stdout > /tmp/loom-main.json
+            test -s /tmp/loom-main.json
