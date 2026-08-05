@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -e .
 
 EXPOSE 8080
 
-CMD ["python", "-m", "core.api.server"]
+CMD ["loom-api"]
