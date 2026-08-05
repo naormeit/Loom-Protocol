@@ -8,26 +8,28 @@ This plan targets a strict judge, not a friendly reader. A 10/10 score means the
 
 ## Current Baseline
 
-- The repo demonstrates the ATP story through a local Python kernel, mock locking layer, CLI demo, and two-agent collision simulation.
-- The current Azure AI Foundry, Azure Content Safety, Cosmos DB, Azure Functions, and Entra ID claims are mostly architectural intent rather than working integrations.
-- The SDK directories exist but are empty.
-- There is no hosted API, real cloud state, cryptographic proof, CI, unit test suite, or customer validation evidence in the repo.
-- The competition narrative is promising but too broad; it needs one painful initial wedge use case.
+- The repo demonstrates the ATP story through a local Python kernel, HTTP API gateway, static website demo, Python SDK, local atomic ledger, CLI/scenario demos, and collision simulations.
+- Azure OpenAI / Azure AI Foundry-style intent parsing, Azure AI Content Safety, and Azure Cosmos DB adapters exist behind `LOOM_MODE=azure`, but live cloud credentials, deployed resources, and integration evidence are still required.
+- The Python SDK is implemented with optional HMAC-SHA256 packet signing; a TypeScript SDK is still missing.
+- CI exists for Python 3.10 and 3.11 import smoke, unit tests, and entrypoint compilation, but it does not yet cover Docker, examples, Bicep validation, website checks, or live Azure integration.
+- The local security MVP includes signed packets, nonce/timestamp freshness checks, and replay rejection; Entra ID, persistent audit trails, and rate limiting remain future production work.
+- There is still no hosted API, real cloud state evidence, founder-led validation evidence, pitch deck, demo video, or public competition package in the repo.
+- The competition narrative is now anchored around the limited-inventory agent commerce wedge; the next work is proving it with live Azure services, metrics, validation, and polished submission materials.
 
 ## Target Scores
 
 | Factor | Current | 10/10 Target |
 | --- | ---: | --- |
 | Idea / ambition | 8 | Keep the bold protocol story, but anchor it in one urgent real-world transaction bottleneck. |
-| Problem clarity | 5 | Show a concrete before/after use case with measurable failure from current APIs. |
-| Technical execution | 2 | Ship a deployed MVP with real Azure services, SDKs, tests, metrics, and repeatable setup. |
-| Microsoft AI requirement | 2 | Make at least two Microsoft AI services required in the product path, not optional labels. |
-| MVP demonstrability | 3 | Provide a hosted judge demo, local fallback demo, scripts, sample packets, and a 2-minute flow. |
-| Security credibility | 2 | Implement signed ATP packets, identity checks, audit trails, rate limits, and threat model docs. |
+| Problem clarity | 7 | Show a concrete before/after use case with measurable failure from current APIs. |
+| Technical execution | 4 | Ship a deployed MVP with real Azure services, SDKs, tests, metrics, and repeatable setup. |
+| Microsoft AI requirement | 4 | Make at least two Microsoft AI services required in the product path, not optional labels. |
+| MVP demonstrability | 5 | Provide a hosted judge demo, local fallback demo, scripts, sample packets, and a 2-minute flow. |
+| Security credibility | 4 | Implement signed ATP packets, identity checks, audit trails, rate limits, and threat model docs. |
 | Business viability | 4 | Replace "Loom Tax" as the main claim with a credible wedge, buyer, pricing model, and GTM. |
 | Founder-led validation | 1 | Add interview notes, pilot targets, waitlist/LOI evidence, and iteration history. |
-| Documentation | 5 | Align docs with working code, remove overclaims, add architecture diagrams and runbooks. |
-| Competition readiness | 3 | Prepare deck, pitch video, demo video, public URLs, technical appendix, and judge FAQ. |
+| Documentation | 6 | Align docs with working code, remove overclaims, add architecture diagrams and runbooks. |
+| Competition readiness | 4 | Prepare deck, pitch video, demo video, public URLs, technical appendix, and judge FAQ. |
 
 ## Product Wedge
 
@@ -211,11 +213,11 @@ Files:
 - `docs/spec/atp_spec.md`
 
 Required corrections:
-- Remove broken `[cite_start]` artifacts.
-- Stop calling simulated services fully implemented.
-- Add a status table that distinguishes `Implemented`, `In progress`, and `Planned`.
-- Add local setup, Azure setup, testing, and demo commands.
-- Add exact Microsoft AI services used in the live product path.
+- Keep README, compliance, architecture, and ATP spec claims aligned with the current implementation.
+- Keep simulated or local-only services clearly separated from live Azure proof.
+- Add or maintain status tables that distinguish `Implemented`, `In progress`, and `Planned`.
+- Keep local setup, Azure setup, testing, website, and demo commands current.
+- Add exact Microsoft AI services used in the live product path once Azure validation evidence exists.
 
 ## Test Strategy
 
@@ -238,18 +240,16 @@ Minimum manual checks:
 
 ## Execution Order
 
-1. Narrow the MVP to limited-inventory agent commerce.
-2. Refactor current kernel into typed packet, result, ledger, safety, and parser modules.
-3. Add real local tests before adding cloud dependencies.
-4. Build the API gateway and local SDK.
-5. Add packet signing and replay protection.
-6. Implement real Azure Content Safety and Azure AI Foundry / Azure OpenAI integrations.
-7. Replace mock ledger with Cosmos DB conditional writes in Azure mode.
-8. Add load harness and metrics reports.
-9. Add cloud deployment scripts and CI.
-10. Update docs to match the working product.
-11. Collect validation evidence and business proof.
-12. Package deck, pitch video, demo video, and judge FAQ.
+1. Keep the MVP focused on limited-inventory agent commerce.
+2. Keep the local typed packet, result, ledger, safety, parser, API gateway, Python SDK, signing, and replay-protection path stable.
+3. Clean up PR and repo hygiene issues, including stale files and stale claims.
+4. Expand CI with Docker build, example smoke tests, Bicep validation, and website checks.
+5. Wire Bicep and deployment docs to the real Loom container image and required Azure configuration.
+6. Validate Azure OpenAI / Azure AI Foundry-style intent parsing, Azure AI Content Safety, and Cosmos DB against live resources.
+7. Add load harness metrics reports for 100, 1,000, and stress-size local scenarios.
+8. Add judge demo script, recorded demo script, architecture diagram, technical appendix, and release checklist.
+9. Collect validation evidence and business proof.
+10. Package deck, pitch video, demo video, public URLs, and judge FAQ.
 
 ## Definition Of Done
 
@@ -266,4 +266,3 @@ The project can be considered 10/10-ready when:
 - Founder-led validation evidence is present.
 - The pitch explains a specific buyer, market wedge, and business model.
 - Submission materials are complete and public links work.
-
