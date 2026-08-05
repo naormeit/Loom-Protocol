@@ -175,5 +175,6 @@ Cosmos DB container expectation: use `/resource_id` as the partition key. The Az
 ## Next Production Milestones
 
 - Add TypeScript SDK.
-- Add CI and Azure deployment infrastructure.
+- Expand CI with Docker build, example smoke tests, Bicep validation, and website checks.
+- Complete Azure deployment infrastructure with a real Loom container image, service configuration, and live validation evidence.
 - Collect founder-led validation from marketplaces, agent builders, and platform teams.

@@ -22,14 +22,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
 
+      - name: Import smoke test
+        run: |
+          python - <<'PY'
+          import core.api.server
+          import loom_protocol
+          print('imports-ok')
+          PY
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test*.py"
 
-      - name: Compile the API entrypoint
-        run: python -m py_compile run.py core/api/server.py
+      - name: Compile the Python entrypoints
+        run: |
+          python -m py_compile run.py core/api/server.py
