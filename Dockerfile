@@ -7,7 +7,7 @@ COPY run.py ./
 COPY core ./core
 COPY sdk ./sdk
 
-RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -e ".[azure]"
 
 EXPOSE 8080
 

@@ -8,6 +8,21 @@ param appName string = 'loom-protocol-api'
 @minLength(1)
 param image string
 
+@description('Container registry server, for example <registry>.azurecr.io. Leave empty for public images.')
+param registryServer string = ''
+
+@description('User-assigned managed identity resource ID for pulling from a private registry. Leave empty for public images.')
+param registryIdentityResourceId string = ''
+
+var containerAppIdentity = empty(registryIdentityResourceId) ? {
+  type: 'SystemAssigned'
+} : {
+  type: 'SystemAssigned, UserAssigned'
+  userAssignedIdentities: {
+    '${registryIdentityResourceId}': {}
+  }
+}
+
 @description('Location for the deployment resources')
 param location string = resourceGroup().location
 
@@ -74,9 +89,7 @@ resource managedEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: appName
   location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
+  identity: containerAppIdentity
   properties: {
     managedEnvironmentId: managedEnvironment.id
     configuration: {
@@ -85,7 +98,12 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 8080
         transport: 'auto'
       }
-      registries: []
+      registries: empty(registryServer) ? [] : [
+        {
+          server: registryServer
+          identity: registryIdentityResourceId
+        }
+      ]
       secrets: [
         {
           name: 'azure-openai-api-key'
