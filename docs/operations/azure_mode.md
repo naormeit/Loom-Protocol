@@ -50,6 +50,8 @@ az deployment group create `
   --template-file infra/main.bicep `
   --parameters `
     image="<registry>.azurecr.io/loom-protocol:<tag>" `
+    registryServer="<registry>.azurecr.io" `
+    registryIdentityResourceId="<user-assigned-identity-resource-id>" `
     azureOpenAiEndpoint="$env:AZURE_OPENAI_ENDPOINT" `
     azureOpenAiApiKey="$env:AZURE_OPENAI_API_KEY" `
     azureOpenAiDeployment="$env:AZURE_OPENAI_DEPLOYMENT" `
@@ -61,7 +63,7 @@ az deployment group create `
     cosmosContainer="$env:COSMOS_CONTAINER"
 ```
 
-If the image lives in private ACR, configure Container Apps registry access before treating the app as deployable. This phase wires the app and environment values; it does not yet provision the Azure AI, Cosmos, Entra, or registry resources themselves.
+If the image lives in private ACR, grant `AcrPull` to the user-assigned identity passed as `registryIdentityResourceId`. This phase wires the app and environment values; it does not yet provision the Azure AI, Cosmos, Entra, registry, or identity resources themselves.
 
 ## Verification Evidence To Capture
 

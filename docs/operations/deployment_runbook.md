@@ -12,7 +12,7 @@ This runbook captures the minimum Azure infrastructure needed to host the Loom A
 - Azure Cosmos DB for NoSQL account with a database and container for lock state.
 - Microsoft Entra ID or another identity mechanism for future authority verification.
 
-The Cosmos container must use `/resource_id` as its partition key. The current template does not create Azure OpenAI, Content Safety, Cosmos DB, Entra ID, ACR, or registry pull role assignments.
+The Cosmos container must use `/resource_id` as its partition key. The current template does not create Azure OpenAI, Content Safety, Cosmos DB, Entra ID, ACR, or registry pull role assignments. It can consume a private ACR image when passed `registryServer` and a user-assigned managed identity resource ID through `registryIdentityResourceId`.
 
 ## Required secrets and environment variables
 
@@ -56,20 +56,40 @@ Set the following values as Bicep parameters, GitHub Actions secrets, or Contain
    docker tag loom-protocol:$tag $image
    docker push $image
    ```
-3. Confirm the required Azure service values are available:
+3. If using private ACR, create a pull identity and grant `AcrPull`:
+   ```powershell
+   $identityName = "loom-acr-pull-id"
+   $identity = az identity create `
+     --resource-group $resourceGroup `
+     --name $identityName `
+     --location $location `
+     | ConvertFrom-Json
+
+   $acrId = az acr show --name $acrName --query id --output tsv
+
+   az role assignment create `
+     --assignee $identity.principalId `
+     --role AcrPull `
+     --scope $acrId
+   ```
+4. Confirm the required Azure service values are available:
    ```powershell
    $azureOpenAiEndpoint = "https://<resource>.openai.azure.com"
    $azureOpenAiDeployment = "<deployment>"
    $contentSafetyEndpoint = "https://<resource>.cognitiveservices.azure.com"
    $cosmosEndpoint = "https://<account>.documents.azure.com:443/"
    ```
-4. Deploy the Container Apps environment and Loom API app:
+5. Deploy the Container Apps environment and Loom API app:
    ```powershell
+   $registryServer = "$acrName.azurecr.io"
+
    az deployment group create `
      --resource-group $resourceGroup `
      --template-file infra/main.bicep `
      --parameters `
        image=$image `
+       registryServer=$registryServer `
+       registryIdentityResourceId=$identity.id `
        azureOpenAiEndpoint=$azureOpenAiEndpoint `
        azureOpenAiApiKey="<azure-openai-key>" `
        azureOpenAiDeployment=$azureOpenAiDeployment `
@@ -81,7 +101,6 @@ Set the following values as Bicep parameters, GitHub Actions secrets, or Contain
        cosmosContainer="locks" `
        loomRequireSignature="false"
    ```
-5. If the image is private, ensure the Container App can pull from the registry. For ACR, assign the app identity `AcrPull` or configure registry credentials before relying on the deployment for a live demo.
 6. Verify the endpoint with a health check and a handshake request.
 
 ## Verification checklist
@@ -95,6 +114,6 @@ Set the following values as Bicep parameters, GitHub Actions secrets, or Contain
 
 ## Current limitations
 
-- `infra/main.bicep` wires the Loom container and runtime configuration, but does not yet provision Azure OpenAI, Content Safety, Cosmos DB, Entra ID, ACR, or ACR pull role assignments.
+- `infra/main.bicep` wires the Loom container, runtime configuration, and optional managed-identity ACR pull configuration, but does not yet provision Azure OpenAI, Content Safety, Cosmos DB, Entra ID, ACR, or ACR pull role assignments.
 - Live Azure evidence still needs to be captured separately: deployed URL, `/health` response, scenario output, and Azure service metrics.
 - For local-only demos, keep `LOOM_MODE=local`; do not present that as a live Azure deployment.
