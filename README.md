@@ -174,9 +174,28 @@ Press **Run** and the simulator sends one real `POST /v1/handshake` request per 
 
 If the API is not reachable, the view is labelled **SIMULATED**, its outcomes are generated locally, and the timing label reads "simulated, not measured". It never presents generated results as measured.
 
+#### Typography, accessibility and details
+
+- **Fonts:** the site uses the visitor's own system font on purpose (`system-ui`, then Segoe UI, Roboto, Helvetica Neue, Arial) and loads no external fonts or trackers. A single weight (700) is used for bold text, because system fonts do not all have 800 and 900 and the site would otherwise look different on each device. Heading sizes are `clamp()`-based with a 4rem (64 px) cap on the main heading.
+- **Contrast:** all text styles measured pass WCAG AA (small coral labels use a darker `--coral-text`).
+- **Navigation:** a "Skip to content" link, 44 px high nav links that wrap as whole links on narrow screens, `scroll-padding` so anchored sections are not hidden under the sticky header, and a visible keyboard focus outline.
+- **Simulator results for screen readers:** the grid is drawn on a canvas, so each finished run also writes a sentence into a polite live region ("240 agents sent requests. Agent 37 got the lock after 425 milliseconds. 239 other agents were told to renegotiate."). Simulated runs are announced as simulated.
+- **Chart on small screens:** the "responses over time" chart now shows down to a 230 px tall canvas (it was hidden below 300 px, which hid it on 1024 px wide screens). On phones under about 400 px wide it is still hidden because the canvas is too small.
+- **Images and icons:** the header uses a small square mark (`assets/loom-mark.png`, 16 KB) instead of the 190 KB wide logo, and there are 32 px and 192 px favicons and an Apple touch icon. `assets/loom-logo.png` is kept only for the intro, which samples it. The mark, icons and `assets/og-image.png` were generated from `loom-logo.png`; the share image text was rendered with Segoe UI.
+- **Sharing and discovery:** Open Graph and Twitter tags, a theme colour, `robots.txt`, and a `404.html`. The share image URL is absolute (it points at the file on GitHub's raw host) because social crawlers need an absolute URL. There is no canonical URL, `og:url` or sitemap yet because there is no public domain.
+- **Footer:** states that this is a student project and is not affiliated with or endorsed by Microsoft, and links to the code and licence.
+
+#### Publishing the site
+
+The site is static and is not published anywhere yet. When you host it:
+
+1. Set `apiUrl` in `website/config.js` to your hosted gateway (for example `https://loom-api.example.com`). A `?api=` query parameter still overrides it.
+2. Add the site's origin to the gateway's `LOOM_ALLOWED_ORIGINS`.
+3. Add a canonical link, `og:url` and a `sitemap.xml` once the domain is known, and point `og:image` at the site's own copy of `assets/og-image.png`.
+
 ### Pointing the website at another backend
 
-Open the page with `?api=https://<host>` (http/https origins only). The endpoint shown in the page updates to match. For a browser on another origin to call the API, add that origin to the server:
+Set `apiUrl` in `website/config.js` for a hosted copy, or open the page with `?api=https://<host>` (http/https origins only; the query parameter wins). The endpoint shown in the page updates to match. For a browser on another origin to call the API, add that origin to the server:
 
 ```powershell
 $env:LOOM_ALLOWED_ORIGINS="https://my-site.example.com,https://other.example.com"
@@ -434,7 +453,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - `integrations/mcp_server/`: MCP server (`loom_mcp_server.py`) and the MCP-free result logic (`loom_tools.py`).
 - `examples/`: agent and scenario demos (`scenarios/two_agent_demo.py`, `mcp/mcp_client_demo.py`).
 - `tests/`: unit and integration tests.
-- `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `landing.js` scroll reveal, `styles.css`, `assets/`).
+- `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `landing.js` scroll reveal, `config.js` API address for hosted copies, `styles.css`, `404.html`, `robots.txt`, `assets/`).
 - `infra/main.bicep`: Azure Container Apps template.
 - `Dockerfile`: API container image.
 - `docs/competition/`: Imagine Cup 2027 plan.

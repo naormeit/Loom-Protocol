@@ -8,14 +8,28 @@
       name="description"
       content="Run the Loom Protocol collision demo: many agents request one resource, exactly one gets the lock, the rest get structured retry guidance."
     >
-    <link rel="icon" type="image/png" href="assets/loom-logo.png">
+    <meta name="theme-color" content="#f7f3ec">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Loom Protocol">
+    <meta property="og:title" content="Live demo | Loom Protocol">
+    <meta property="og:description" content="Run the Loom Protocol collision demo: many agents request one resource, exactly one gets the lock, the rest get structured retry guidance.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/naormeit/Loom-Protocol/main/website/assets/og-image.png">
+    <meta property="og:image:alt" content="Loom Protocol: when many AI agents want the same thing, Loom decides who gets it.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Live demo | Loom Protocol">
+    <meta name="twitter:description" content="Run the Loom Protocol collision demo: many agents request one resource, exactly one gets the lock, the rest get structured retry guidance.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/naormeit/Loom-Protocol/main/website/assets/og-image.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body id="top">
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="topbar">
       <a class="brand" href="index.html" aria-label="Loom Protocol home">
         <span class="brand-mark" aria-hidden="true">
-          <img src="assets/loom-logo.png" alt="">
+          <img src="assets/loom-mark.png" alt="" width="56" height="56">
         </span>
         <span>Loom Protocol</span>
       </a>
@@ -28,7 +42,7 @@
       </nav>
     </header>
 
-    <main id="top">
+    <main id="main" tabindex="-1">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow">Live demo</p>
@@ -81,6 +95,8 @@
               <strong id="lastResponse">Not run yet</strong>
             </div>
           </div>
+
+          <div class="sr-only" id="runAnnounce" aria-live="polite" aria-atomic="true"></div>
 
           <canvas id="agentCanvas" width="920" height="520" aria-label="Live grid of agent requests resolving against one locked resource, one cell per agent"></canvas>
 
@@ -146,20 +162,20 @@
       <section class="problem-band" aria-labelledby="problem-title">
         <div class="section-inner two-column">
           <div>
-            <p class="eyebrow">The failure mode</p>
-            <h2 id="problem-title">Agent commerce breaks when every bot reaches checkout at once.</h2>
+            <p class="eyebrow">Why this exists</p>
+            <h2 id="problem-title">What happens when every agent reaches checkout at once.</h2>
           </div>
           <div class="copy-stack">
             <p>
-              Direct vendor APIs were not designed for thousands of autonomous shoppers
-              reserving one scarce item at the same time. The result is duplicate holds,
-              retry storms, ambiguous partial state, and no machine-readable path for
-              the losing agents.
+              Many checkout and booking systems were built for one person at a time. When
+              hundreds of autonomous agents go for the same scarce item, the vendor can see
+              duplicate holds, retry storms, and agents that lose without any
+              machine-readable way to try again. We think this will get more common; we are
+              still testing that with the people who build agents.
             </p>
             <p>
-              Loom moves the concurrency decision upstream. Agents submit intent first.
-              The protocol returns either a confirmed lock or a structured negotiation
-              payload for safe retry.
+              Loom moves the decision upstream. Agents submit intent first, and Loom returns
+              either a confirmed lock or a structured payload for a safe retry.
             </p>
           </div>
         </div>
@@ -168,7 +184,7 @@
       <section class="section-inner" aria-labelledby="status-title">
         <div class="section-heading">
           <p class="eyebrow">Implementation status</p>
-          <h2 id="status-title">Clear proof boundaries for review.</h2>
+          <h2 id="status-title">What works today, and what does not.</h2>
         </div>
         <div class="status-grid">
           <article>
@@ -252,10 +268,11 @@
     </main>
 
     <footer class="footer">
-      <span>Loom Protocol</span>
-      <span><a href="index.html">Overview</a> · Atomic reservation middleware for agentic transactions.</span>
+      <span>Loom Protocol. A student project built for the Microsoft Imagine Cup 2027; not affiliated with or endorsed by Microsoft.</span>
+      <span><a href="index.html">Overview</a> · <a href="https://github.com/naormeit/Loom-Protocol" target="_blank" rel="noopener">Code on GitHub</a> (Apache-2.0)</span>
     </footer>
 
+    <script src="config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
