@@ -10,7 +10,7 @@
   const STORAGE_KEY = "loomIntroSeen";
   const LOGO_URL = "assets/loom-logo.png";
   // Total before the fade: 3400ms; with the 400ms fade the intro lasts about 3.8s.
-  const TIMING = { gather: 900, sphere: 1000, morph: 1100, hold: 400, fade: 400 };
+  const TIMING = { gather: 900, sphere: 900, morph: 1100, hold: 500, fade: 400 };
   const SPREAD = 250; // per-particle start offset in ms, for an organic feel
   const FAILSAFE_MS = 7000;
 
@@ -149,11 +149,35 @@
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     const span = Math.max(maxX - minX, maxY - minY) || 1;
-    return points.map(([x, y, r, g, b]) => ({
+    const samples = points.map(([x, y, r, g, b]) => ({
       x: (x - centerX) / span,
       y: (y - centerY) / span,
       color: [r, g, b]
     }));
+
+    // Clean cut-out of the logo at native resolution (white background made
+    // transparent). It is cross-faded in as the particles land so the final
+    // mark is solid, with no gaps between particles.
+    const scale = image.naturalWidth / sampleWidth;
+    const cutX = Math.floor(minX * scale);
+    const cutY = Math.floor(minY * scale);
+    const cutWidth = Math.ceil((maxX - minX + 1) * scale);
+    const cutHeight = Math.ceil((maxY - minY + 1) * scale);
+    const cutout = document.createElement("canvas");
+    cutout.width = cutWidth;
+    cutout.height = cutHeight;
+    const cutContext = cutout.getContext("2d", { willReadFrequently: true });
+    cutContext.drawImage(image, cutX, cutY, cutWidth, cutHeight, 0, 0, cutWidth, cutHeight);
+    const cutImage = cutContext.getImageData(0, 0, cutWidth, cutHeight);
+    for (let i = 0; i < cutImage.data.length; i += 4) {
+      const lightest = Math.min(cutImage.data[i], cutImage.data[i + 1], cutImage.data[i + 2]);
+      // Fully opaque up to 200, fully transparent from 245; smooth in between.
+      const keep = clamp01((245 - lightest) / 45);
+      cutImage.data[i + 3] = Math.round(cutImage.data[i + 3] * keep);
+    }
+    cutContext.putImageData(cutImage, 0, 0);
+
+    return { samples, cutout, scale, span };
   }
 
   function assignTargets(samples) {
@@ -172,13 +196,19 @@
   }
 
   let ready = false;
+  let logoArt = null;
   const image = new Image();
   image.onload = () => {
     let samples = null;
     try {
-      samples = sampleLogo(image);
+      const result = sampleLogo(image);
+      if (result) {
+        samples = result.samples;
+        logoArt = result;
+      }
     } catch (error) {
       samples = null;
+      logoArt = null;
     }
     assignTargets(samples);
     ready = true;
@@ -218,6 +248,10 @@
     context.fillRect(0, 0, width, height);
 
     const readyForMorph = ready;
+    const revealStart = sphereEnd + TIMING.morph * 0.55;
+    const revealEnd = morphEnd + TIMING.hold * 0.4;
+    const reveal =
+      readyForMorph && logoArt ? ease(clamp01((t - revealStart) / (revealEnd - revealStart))) : 0;
     for (const p of particles) {
       const rotatedX = p.ux * cosA + p.uz * sinA;
       const depth = (-p.ux * sinA + p.uz * cosA + 1) / 2;
@@ -238,7 +272,7 @@
         if (morph > 0) {
           x = lerp(x, centerX + p.target[0] * logoSize, morph);
           y = lerp(y, centerY + p.target[1] * logoSize, morph);
-          size = lerp(size, 2.6, morph);
+          size = lerp(size, 3, morph);
           alpha = lerp(alpha, 1, morph);
           red = lerp(red, p.color[0], morph);
           green = lerp(green, p.color[1], morph);
@@ -246,11 +280,30 @@
         }
       }
 
-      context.globalAlpha = alpha;
-      context.fillStyle = `rgb(${red | 0}, ${green | 0}, ${blue | 0})`;
-      context.fillRect(x - size / 2, y - size / 2, size, size);
+      context.globalAlpha = alpha * (1 - reveal);
+      if (context.globalAlpha > 0.01) {
+        context.fillStyle = `rgb(${red | 0}, ${green | 0}, ${blue | 0})`;
+        context.fillRect(x - size / 2, y - size / 2, size, size);
+      }
     }
     context.globalAlpha = 1;
+
+    if (reveal > 0 && logoArt) {
+      const cssPerSample = logoSize / logoArt.span;
+      const drawWidth = (logoArt.cutout.width / logoArt.scale) * cssPerSample;
+      const drawHeight = (logoArt.cutout.height / logoArt.scale) * cssPerSample;
+      context.globalAlpha = reveal;
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = "high";
+      context.drawImage(
+        logoArt.cutout,
+        centerX - drawWidth / 2,
+        centerY - drawHeight / 2,
+        drawWidth,
+        drawHeight
+      );
+      context.globalAlpha = 1;
+    }
 
     if (t >= totalMs && ready) {
       finish();

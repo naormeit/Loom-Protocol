@@ -17,7 +17,7 @@ The website checks `http://127.0.0.1:8080/health` by default. To point it at a h
 
 ## Landing Intro
 
-`hero-intro.js` plays a short decorative intro: particles form a sphere, morph into the Loom logo (sampled from `assets/loom-logo.png`), then the page content fades in. It lasts about 3.8 seconds in total; adjust `TIMING` at the top of `hero-intro.js` to change that. It does not represent any request or protocol data. It plays once per browser session, is skipped for visitors who prefer reduced motion, and can be skipped with a click or any key. Use `?intro=1` to force it or `?intro=0` to disable it. Opened directly from `file://`, the logo cannot be sampled and the particles settle into a ring instead; serve the folder over HTTP for the full effect.
+`hero-intro.js` plays a short decorative intro: particles form a sphere, morph into the Loom logo (sampled from `assets/loom-logo.png`), then the page content fades in. As the particles land, a clean cut-out of the real logo is cross-faded in over them so the finished mark has no gaps. It lasts about 3.8 seconds in total; adjust `TIMING` at the top of `hero-intro.js` to change that. It does not represent any request or protocol data. It plays once per browser session, is skipped for visitors who prefer reduced motion, and can be skipped with a click or any key. Use `?intro=1` to force it or `?intro=0` to disable it. Opened directly from `file://`, the logo cannot be sampled and the particles settle into a ring instead; serve the folder over HTTP for the full effect.
 
 ## Current Direction
 
