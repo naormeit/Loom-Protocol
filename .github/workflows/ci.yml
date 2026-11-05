@@ -126,7 +126,8 @@ jobs:
               'src="app.js"',
           ]
           js_needles = [
-              'const API_BASE_URL = "http://127.0.0.1:8080";',
+              'const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";',
+              'const API_BASE_URL = resolveApiBaseUrl();',
               'fetch(`${API_BASE_URL}/health`',
               'fetch(`${API_BASE_URL}/v1/handshake`',
               'runButton.addEventListener("click"',
