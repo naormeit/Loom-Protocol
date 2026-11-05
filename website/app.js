@@ -49,23 +49,22 @@ const colors = {
 };
 
 const FLASH_MS = 450;
-// Run motion (decorative), 5 seconds in total:
-//   0.0-0.3s  every agent is one point at the centre
-//   0.3-1.7s  the points stream out into a horizontal line
-//   1.7-2.7s  the line holds
-//   2.7-4.2s  the line unfolds into the grid of results
-//   4.2-5.0s  the grid settles, the winner pulses, and the result line appears
-const MOTION_TOTAL_MS = 5000;
-const POINT_HOLD_MS = 300;
-const LINE_EMIT_MS = 1100;
-const LINE_EMIT_SPREAD_MS = 300;
-const LINE_HOLD_END_MS = 2700;
-const UNFOLD_MS = 1100;
-const UNFOLD_SPREAD_MS = 400;
-const RESULT_AT_MS = 4200;
-const LINE_POINT_SIZE = 3;
+// Run motion (decorative), 3 seconds in total:
+//   0.00-0.40s  a black hole forms at the centre of the grid area
+//   0.35-2.35s  it releases the cubes, each spiralling out into its own block
+//   2.00-2.70s  the black hole collapses
+//   2.40-3.00s  the winner pulses and the result line appears
+const MOTION_TOTAL_MS = 3000;
+const HOLE_GROW_MS = 400;
+const HOLE_FADE_START_MS = 2000;
+const HOLE_FADE_MS = 700;
+const RELEASE_START_MS = 350;
+const RELEASE_SPREAD_MS = 600;
+const RELEASE_MS = 1400;
+const SWIRL_RADIANS = Math.PI * 1.5; // how far each cube orbits before it lands
+const RESULT_AT_MS = 2400;
 const POP_MS = 260; // size pop when a response arrives
-const RING_MS = 800; // pulse ring around the winning agent
+const RING_MS = 600; // pulse ring around the winning agent
 const reduceMotion =
   typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -73,8 +72,7 @@ const reduceMotion =
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const lerp = (from, to, amount) => from + (to - from) * amount;
 const easeOutCubic = (amount) => 1 - Math.pow(1 - amount, 3);
-const easeInOutCubic = (amount) =>
-  amount < 0.5 ? 4 * amount * amount * amount : 1 - Math.pow(-2 * amount + 2, 3) / 2;
+const easeInCubic = (amount) => amount * amount * amount;
 
 // One run = one cell per agent. In live mode each cell is filled when that
 // agent's real HTTP response arrives; nothing is decided ahead of time.
@@ -202,6 +200,55 @@ function drawHeader(width) {
   context.fillText(line, 24, 58, width - 48);
 }
 
+function drawBlackHole(centerX, centerY, elapsed, extent) {
+  const grow = easeOutCubic(clamp01(elapsed / HOLE_GROW_MS));
+  const fade = 1 - easeInCubic(clamp01((elapsed - HOLE_FADE_START_MS) / HOLE_FADE_MS));
+  const scale = grow * fade;
+  if (scale <= 0.01) {
+    return;
+  }
+
+  const radius = Math.min(extent * 0.16, 56) * scale;
+
+  // Soft glow around the hole.
+  const glow = context.createRadialGradient(centerX, centerY, radius * 0.4, centerX, centerY, radius * 3);
+  glow.addColorStop(0, `rgba(122, 108, 255, ${0.55 * scale})`);
+  glow.addColorStop(0.5, `rgba(31, 75, 255, ${0.2 * scale})`);
+  glow.addColorStop(1, "rgba(31, 75, 255, 0)");
+  context.fillStyle = glow;
+  context.beginPath();
+  context.arc(centerX, centerY, radius * 3, 0, Math.PI * 2);
+  context.fill();
+
+  // Swirling accretion rings.
+  const rings = [
+    ["rgba(169, 146, 240, 0.85)", 1.35, 0.0052],
+    ["rgba(31, 75, 255, 0.8)", 1.7, -0.0038],
+    ["rgba(166, 230, 0, 0.7)", 2.05, 0.0029]
+  ];
+  rings.forEach(([color, factor, speed], index) => {
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(elapsed * speed + index);
+    context.scale(1, 0.38);
+    context.strokeStyle = color;
+    context.lineWidth = 2.5 * scale + 0.5;
+    context.beginPath();
+    context.arc(0, 0, radius * factor, 0, Math.PI * 1.35);
+    context.stroke();
+    context.restore();
+  });
+
+  // The black core with a thin bright rim.
+  context.fillStyle = "#000000";
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = `rgba(255, 250, 242, ${0.7 * scale})`;
+  context.lineWidth = 1.5;
+  context.stroke();
+}
+
 function drawCells(left, top, width, bottom) {
   const layout = gridLayout(width, top, bottom, run.count);
   const now = performance.now();
@@ -212,13 +259,8 @@ function drawCells(left, top, width, bottom) {
   let winnerCenter = null;
   let winnerSize = layout.size;
 
-  if (moving && elapsed < LINE_EMIT_MS) {
-    // The single point everything starts from.
-    const glow = 1 - clamp01(elapsed / LINE_EMIT_MS);
-    context.fillStyle = `rgba(255, 250, 242, ${0.9 * glow})`;
-    context.beginPath();
-    context.arc(centerX, centerY, 3 + 5 * glow, 0, Math.PI * 2);
-    context.fill();
+  if (moving) {
+    drawBlackHole(centerX, centerY, elapsed, Math.min(width, bottom - top));
   }
 
   run.cells.forEach((cell, index) => {
@@ -227,24 +269,23 @@ function drawCells(left, top, width, bottom) {
     const homeX = left + column * (layout.size + layout.gap) + layout.size / 2;
     const homeY = top + row * (layout.size + layout.gap) + layout.size / 2;
 
-    // Motion only: point -> horizontal line -> grid. Position never encodes the
-    // result; colour always comes from the real response.
+    // Motion only: the black hole releases each cube along a spiral into its
+    // block. Position never encodes the result; colour always comes from the
+    // real response.
     let x = homeX;
     let y = homeY;
     let size = layout.size;
     if (moving) {
       const spread = ((index * 37) % 100) / 100;
-      const lineX = left + ((index + 0.5) / run.count) * width;
-      const emit = easeOutCubic(
-        clamp01((elapsed - POINT_HOLD_MS - spread * LINE_EMIT_SPREAD_MS) / LINE_EMIT_MS)
-      );
-      const unfold = easeInOutCubic(
-        clamp01((elapsed - LINE_HOLD_END_MS - spread * UNFOLD_SPREAD_MS) / UNFOLD_MS)
-      );
-      const lineStepX = lerp(centerX, lineX, emit);
-      x = lerp(lineStepX, homeX, unfold);
-      y = lerp(centerY, homeY, unfold);
-      size = lerp(LINE_POINT_SIZE, layout.size, unfold);
+      const progress = clamp01((elapsed - RELEASE_START_MS - spread * RELEASE_SPREAD_MS) / RELEASE_MS);
+      const travelled = easeOutCubic(progress);
+      const offsetX = homeX - centerX;
+      const offsetY = homeY - centerY;
+      const distance = Math.hypot(offsetX, offsetY);
+      const angle = Math.atan2(offsetY, offsetX) + (1 - travelled) * SWIRL_RADIANS;
+      x = centerX + Math.cos(angle) * distance * travelled;
+      y = centerY + Math.sin(angle) * distance * travelled;
+      size = layout.size * easeOutCubic(clamp01(progress * 1.8));
     }
 
     const age = now - cell.at;
@@ -253,21 +294,25 @@ function drawCells(left, top, width, bottom) {
       size *= 1 + 0.6 * pop * pop;
     }
 
-    context.fillStyle = cellColor(cell.status);
-    context.fillRect(x - size / 2, y - size / 2, size, size);
+    if (size > 0.2) {
+      context.fillStyle = cellColor(cell.status);
+      context.fillRect(x - size / 2, y - size / 2, size, size);
 
-    if (cell.status !== null && age < FLASH_MS) {
-      context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
-      context.lineWidth = 2;
-      context.strokeRect(x - size / 2 - 1, y - size / 2 - 1, size + 2, size + 2);
+      if (cell.status !== null && age < FLASH_MS) {
+        context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
+        context.lineWidth = 2;
+        context.strokeRect(x - size / 2 - 1, y - size / 2 - 1, size + 2, size + 2);
+      }
     }
 
     if (index === run.winnerIndex) {
       winnerCenter = [x, y];
-      winnerSize = size;
-      context.strokeStyle = colors.text;
-      context.lineWidth = 2;
-      context.strokeRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
+      winnerSize = Math.max(size, 4);
+      if (size > 0.2) {
+        context.strokeStyle = colors.text;
+        context.lineWidth = 2;
+        context.strokeRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
+      }
     }
   });
 
