@@ -13,7 +13,29 @@ const conflicts = document.querySelector("#conflicts");
 const latency = document.querySelector("#latency");
 const latencyLabel = document.querySelector("#latencyLabel");
 
-const API_BASE_URL = "http://127.0.0.1:8080";
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";
+
+// Allow a hosted backend via ?api=https://host (http/https only); default to local.
+function resolveApiBaseUrl() {
+  try {
+    const requested = new URLSearchParams(window.location.search).get("api");
+    if (requested) {
+      const url = new URL(requested);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.origin;
+      }
+    }
+  } catch (error) {
+    // Fall through to the default on a malformed value.
+  }
+  return DEFAULT_API_BASE_URL;
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
+const apiEndpoint = document.querySelector("#apiEndpoint");
+if (apiEndpoint) {
+  apiEndpoint.textContent = API_BASE_URL.replace(/^https?:\/\//, "");
+}
 
 const colors = {
   background: "#111a18",

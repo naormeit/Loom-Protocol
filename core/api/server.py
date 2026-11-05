@@ -1,3 +1,4 @@
+import os
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Callable
@@ -110,6 +111,10 @@ def create_handler(kernel: LoomKernel) -> Callable:
                 "http://127.0.0.1:5500",
                 "http://localhost:5500",
             }
+            extra = os.getenv("LOOM_ALLOWED_ORIGINS", "")
+            allowed_origins.update(
+                item.strip() for item in extra.split(",") if item.strip()
+            )
             if origin in allowed_origins:
                 self.send_header("Access-Control-Allow-Origin", origin)
                 self.send_header("Vary", "Origin")
