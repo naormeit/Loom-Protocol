@@ -21,12 +21,12 @@ Last updated: 2026-08-03
 ## Website Baseline
 
 - Website folder: `website/`.
-- Current entry point: `website/index.html`.
+- Pages: `website/index.html` is the landing page (story, how it works, honest status, calls to action, particle intro); `website/demo.html` is the live simulator page.
 - Root redirect: `index.html` sends Live Server root visitors to `website/`.
 - Styling: `website/styles.css`.
 - Interaction: `website/app.js`.
 - The site is static and can be opened directly in a browser.
-- First-screen experience: product positioning plus an interactive agent drop simulator.
+- First-screen experience: the landing page leads with the problem and a short explanation; the interactive agent drop simulator is on `demo.html`.
 - Simulator contract: checks `http://127.0.0.1:8080/health`; when the Python API is running, it sends real `POST /v1/handshake` packets and displays actual lock/conflict counts; each agent's cell is coloured by its own real response; otherwise it must clearly label the view SIMULATED and never present generated outcomes as measured.
 
 ## Messaging Guardrails

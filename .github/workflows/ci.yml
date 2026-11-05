@@ -28,7 +28,7 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[mcp]"
 
       - name: Import smoke test
         run: |
@@ -44,7 +44,11 @@ jobs:
             run.py \
             core/api/server.py \
             examples/bots/simple_buyer.py \
-            examples/scenarios/limited_inventory_drop.py
+            examples/scenarios/limited_inventory_drop.py \
+            examples/scenarios/two_agent_demo.py \
+            examples/mcp/mcp_client_demo.py \
+            integrations/mcp_server/loom_tools.py \
+            integrations/mcp_server/loom_mcp_server.py
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test*.py"
@@ -87,6 +91,13 @@ jobs:
             --resource-id CI-DROP \
             --require-one-winner
 
+          python examples/scenarios/two_agent_demo.py \
+            --base-url http://127.0.0.1:8090 \
+            --check
+
+          python examples/mcp/mcp_client_demo.py \
+            --base-url http://127.0.0.1:8090
+
   website:
     name: Website static checks
     runs-on: ubuntu-latest
@@ -106,7 +117,10 @@ jobs:
 
           required_files = [
               Path("website/index.html"),
+              Path("website/demo.html"),
               Path("website/app.js"),
+              Path("website/hero-intro.js"),
+              Path("website/landing.js"),
               Path("website/styles.css"),
               Path("website/README.md"),
           ]
@@ -114,19 +128,36 @@ jobs:
           if missing:
               raise SystemExit(f"missing website files: {', '.join(missing)}")
 
-          html = Path("website/index.html").read_text(encoding="utf-8")
+          landing = Path("website/index.html").read_text(encoding="utf-8")
+          demo = Path("website/demo.html").read_text(encoding="utf-8")
           js = Path("website/app.js").read_text(encoding="utf-8")
+          intro = Path("website/hero-intro.js").read_text(encoding="utf-8")
           css = Path("website/styles.css").read_text(encoding="utf-8")
 
-          html_needles = [
+          landing_needles = [
               "<title>Loom Protocol",
+              'href="styles.css"',
+              'href="demo.html"',
+              'src="hero-intro.js"',
+              'src="landing.js"',
+              "data-reveal",
+          ]
+          demo_needles = [
+              "<title>Live demo | Loom Protocol",
               'id="agentCanvas"',
               'id="runSimulation"',
               'href="styles.css"',
+              'href="index.html"',
               'src="app.js"',
           ]
+          intro_needles = [
+              "PALETTE",
+              "prefers-reduced-motion",
+              '"[data-reveal]"',
+          ]
           js_needles = [
-              'const API_BASE_URL = "http://127.0.0.1:8080";',
+              'const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";',
+              'const API_BASE_URL = resolveApiBaseUrl();',
               'fetch(`${API_BASE_URL}/health`',
               'fetch(`${API_BASE_URL}/v1/handshake`',
               'runButton.addEventListener("click"',
@@ -138,7 +169,9 @@ jobs:
           ]
 
           for label, content, needles in [
-              ("HTML", html, html_needles),
+              ("Landing HTML", landing, landing_needles),
+              ("Demo HTML", demo, demo_needles),
+              ("Intro JavaScript", intro, intro_needles),
               ("JavaScript", js, js_needles),
               ("CSS", css, css_needles),
           ]:

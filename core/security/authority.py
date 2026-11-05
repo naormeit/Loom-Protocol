@@ -1,3 +1,4 @@
+import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, Tuple
@@ -23,6 +24,8 @@ class AuthorityVerifier:
         self.require_signature = require_signature
         self.freshness_seconds = freshness_seconds
         self._seen_nonces: Dict[Tuple[str, str], int] = {}
+        # The server is multi-threaded; the replay check and the nonce write must be atomic.
+        self._lock = threading.Lock()
 
     def verify(self, packet: ATPPacket) -> AuthorityDecision:
         if not self.require_signature and not packet.signature:
@@ -41,15 +44,15 @@ class AuthorityVerifier:
         if abs(now - packet.timestamp) > self.freshness_seconds:
             return AuthorityDecision(False, "packet timestamp is outside freshness window")
 
-        nonce_key = (packet.agent_id, packet.nonce)
-        if nonce_key in self._seen_nonces:
-            return AuthorityDecision(False, "replayed packet nonce")
-
         if not verify_signature(packet.to_signable_mapping(), self.shared_secret):
             return AuthorityDecision(False, "invalid packet signature")
 
-        self._seen_nonces[nonce_key] = packet.timestamp
-        self._evict_old_nonces(now)
+        nonce_key = (packet.agent_id, packet.nonce)
+        with self._lock:
+            if nonce_key in self._seen_nonces:
+                return AuthorityDecision(False, "replayed packet nonce")
+            self._seen_nonces[nonce_key] = packet.timestamp
+            self._evict_old_nonces(now)
         return AuthorityDecision(True)
 
     def _evict_old_nonces(self, now: int) -> None:

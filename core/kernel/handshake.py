@@ -1,6 +1,7 @@
 import hashlib
 import random
 from core.ai import LocalContentSafety, LocalIntentParser
+from core.audit import NullAuditLog, sha256_text
 from core.database.cosmos_client import LoomCosmosClient
 from core.models import ATPPacket, HandshakeResult, PacketValidationError
 from core.security import AuthorityVerifier
@@ -12,6 +13,8 @@ class LoomKernel:
         intent_parser=None,
         safety_checker=None,
         authority_verifier=None,
+        audit_log=None,
+        rate_limiter=None,
     ):
         self.version = "1.0.0-alpha"
         # Imagine Cup Compliance: Tracking our 3 core Microsoft Cloud services
@@ -21,6 +24,10 @@ class LoomKernel:
         self.intent_parser = intent_parser or LocalIntentParser()
         self.safety_checker = safety_checker or LocalContentSafety()
         self.authority_verifier = authority_verifier or AuthorityVerifier()
+        # Hash-chained decision log; records nothing unless one is supplied.
+        self.audit_log = audit_log or NullAuditLog()
+        # Optional per-agent limiter; None means unlimited.
+        self.rate_limiter = rate_limiter
 
     def process_handshake(self, agent_packet):
         """
@@ -34,22 +41,44 @@ class LoomKernel:
         try:
             packet = ATPPacket.from_mapping(agent_packet)
         except PacketValidationError as exc:
-            return HandshakeResult(
-                status=400,
-                message=f"Invalid ATP packet: {exc}",
-                correlation_id="invalid-packet",
-            ).to_dict()
+            return self._finish(
+                None,
+                HandshakeResult(
+                    status=400,
+                    message=f"Invalid ATP packet: {exc}",
+                    correlation_id="invalid-packet",
+                ),
+            )
 
         correlation_id = self._correlation_id(packet)
         print(f"\n[Loom ATP] Handshake initiated by {packet.agent_id}")
 
+        if self.rate_limiter is not None:
+            allowed, retry_after_ms = self.rate_limiter.check(packet.agent_id)
+            if not allowed:
+                return self._finish(
+                    packet,
+                    HandshakeResult(
+                        status=429,
+                        message=f"Rate limit exceeded for {packet.agent_id}.",
+                        correlation_id=correlation_id,
+                        negotiation_payload={
+                            "action": "BACK_OFF",
+                            "retry_after_ms": retry_after_ms,
+                        },
+                    ),
+                )
+
         authority = self.authority_verifier.verify(packet)
         if not authority.allowed:
-            return HandshakeResult(
-                status=401,
-                message=f"Rejected: {authority.reason}.",
-                correlation_id=correlation_id,
-            ).to_dict()
+            return self._finish(
+                packet,
+                HandshakeResult(
+                    status=401,
+                    message=f"Rejected: {authority.reason}.",
+                    correlation_id=correlation_id,
+                ),
+            )
         
         # --- INTENT PARSING ---
         parsed_intent = self._parse_intent_with_ai_foundry(packet.intent)
@@ -57,11 +86,14 @@ class LoomKernel:
         # --- CONTENT SAFETY SCRUB ---
         safety_decision = self._check_content_safety(parsed_intent)
         if not safety_decision.safe:
-            return HandshakeResult(
-                status=403,
-                message=f"Rejected: {safety_decision.reason}.",
-                correlation_id=correlation_id,
-            ).to_dict()
+            return self._finish(
+                packet,
+                HandshakeResult(
+                    status=403,
+                    message=f"Rejected: {safety_decision.reason}.",
+                    correlation_id=correlation_id,
+                ),
+            )
 
         # --- DISTRIBUTED ATOMIC RESOLUTION VIA COSMOS DB (Option A Preservation) ---
         lock_success, holding_agent = self.db.acquire_atomic_lock(
@@ -77,25 +109,65 @@ class LoomKernel:
             suggested_backoff = random.randint(150, 300)  # Jittered millisecond delay
 
             print(f" > [Conflict Engine] Generating Protocol Negotiation Payload for {packet.agent_id}...")
-            return HandshakeResult(
-                status=409,
-                message=f"Conflict Rejected: Resource currently locked by {holding_agent}.",
-                correlation_id=correlation_id,
-                conflict_with=holding_agent,
-                negotiation_payload={
-                    "action": "RENEGOTIATE",
-                    "suggested_alternative_resource": suggested_alt,
-                    "retry_backoff_ms": suggested_backoff
-                }
-            ).to_dict()
+            return self._finish(
+                packet,
+                HandshakeResult(
+                    status=409,
+                    message=f"Conflict Rejected: Resource currently locked by {holding_agent}.",
+                    correlation_id=correlation_id,
+                    conflict_with=holding_agent,
+                    negotiation_payload={
+                        "action": "RENEGOTIATE",
+                        "suggested_alternative_resource": suggested_alt,
+                        "retry_backoff_ms": suggested_backoff
+                    }
+                ),
+            )
 
         # Smooth path if Option A succeeds
-        return HandshakeResult(
-            status=201,
-            message="Atomic Lock Secured.",
-            correlation_id=correlation_id,
-            parsed_as=parsed_intent,
-        ).to_dict()
+        return self._finish(
+            packet,
+            HandshakeResult(
+                status=201,
+                message="Atomic Lock Secured.",
+                correlation_id=correlation_id,
+                parsed_as=parsed_intent,
+            ),
+        )
+
+    def _finish(self, packet, result):
+        """Audit the decision and return the response dict.
+
+        The audit entry holds digests and identifiers only: the raw intent text
+        and the signature are never written.
+        """
+        response = result.to_dict()
+        entry = {
+            "event": "handshake",
+            "status": result.status,
+            "correlation_id": result.correlation_id,
+            "message": result.message,
+        }
+        if packet is not None:
+            entry.update(
+                {
+                    "agent_id": packet.agent_id,
+                    "resource": packet.intent_hash,
+                    "intent_sha256": sha256_text(packet.intent),
+                    "signed": bool(packet.signature),
+                    "signature_fingerprint": (
+                        sha256_text(packet.signature)[:16] if packet.signature else None
+                    ),
+                }
+            )
+        if result.conflict_with is not None:
+            entry["conflict_with"] = result.conflict_with
+        try:
+            self.audit_log.record(entry)
+        except OSError as exc:
+            # A failing log must not change the protocol outcome, but it must be visible.
+            print(f"[Loom ATP] audit log write failed: {exc}")
+        return response
 
     def _parse_intent_with_ai_foundry(self, raw_text):
         print(f" > Intent Parser: Parsing intent '{raw_text}'...")
