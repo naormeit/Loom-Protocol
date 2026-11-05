@@ -20,6 +20,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 - [API Contract](#api-contract)
 - [Azure Mode](#azure-mode)
 - [Microsoft Imagine Cup 2027](#microsoft-imagine-cup-2027)
+- [Audit Log and Rate Limiting](#audit-log-and-rate-limiting)
 - [Known Limitations](#known-limitations)
 - [Repository Map](#repository-map)
 - [Continuous Integration](#continuous-integration)
@@ -41,7 +42,8 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Hosted deployment on Azure Container Apps | Partial | Deployed and health-checked in `LOOM_MODE=local` only. |
 | CI (Python 3.10/3.11, website checks, Docker build, Bicep validation) | Implemented | See [CI](#continuous-integration). |
 | Full `LOOM_MODE=azure` with live Microsoft AI services | In progress | Blocked on a subscription/region that allows Azure OpenAI and Content Safety. |
-| Public-key signatures (true non-repudiation), audit trail, rate limiting | Planned | |
+| Hash-chained audit log, per-agent and per-client-address rate limiting | Implemented (local) | Tamper-evident file log and in-memory limiters; see [Audit Log and Rate Limiting](#audit-log-and-rate-limiting). |
+| Public-key signatures (true non-repudiation) | Planned | |
 | Microsoft Entra ID authority verification | Planned | Not implemented. |
 | TypeScript SDK | Planned | |
 | Customer validation and pricing | Planned | None collected yet. |
@@ -51,7 +53,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 Every request goes through the same handshake on `POST /v1/handshake`:
 
 1. An agent or the SDK sends an ATP packet.
-2. Loom validates the packet shape (`400` on failure).
+2. Loom validates the packet shape (`400` on failure) and applies the per-agent rate limit (`429` when exceeded).
 3. Loom verifies authority when signature mode is enabled (`401` on failure).
 4. Loom parses and normalizes the intent.
 5. Loom screens the intent for unsafe behavior (`403` if rejected).
@@ -201,6 +203,9 @@ More website notes are in `website/README.md` and `docs/website/main_website_mem
 | `LOOM_REQUIRE_SIGNATURE` | `false` | Require signed packets. |
 | `LOOM_SHARED_SECRET` | empty | Shared secret for HMAC signing. |
 | `LOOM_ALLOWED_ORIGINS` | empty | Comma-separated extra browser origins allowed to call the API (added to the localhost:5500 defaults). |
+| `LOOM_AUDIT_LOG` | empty (off) | Path of the hash-chained JSONL audit log. |
+| `LOOM_RATE_LIMIT_AGENT_MAX`, `LOOM_RATE_LIMIT_AGENT_WINDOW` | `30`, `10` | Max requests per agent ID per window (seconds). `0` disables. |
+| `LOOM_RATE_LIMIT_IP_MAX`, `LOOM_RATE_LIMIT_IP_WINDOW` | `0` (off), `10` | Max requests per client address per window (seconds). |
 | `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_DEPLOYMENT` | | Azure OpenAI intent parsing (azure mode). |
 | `CONTENT_SAFETY_ENDPOINT`, `CONTENT_SAFETY_KEY`, `CONTENT_SAFETY_BLOCK_THRESHOLD` | empty, empty, `4` | Azure AI Content Safety (azure mode). |
 | `COSMOS_ENDPOINT`, `COSMOS_KEY`, `COSMOS_DATABASE`, `COSMOS_CONTAINER` | empty, empty, `loom`, `locks` | Cosmos DB lock ledger (azure mode). |
@@ -257,6 +262,7 @@ Status codes:
 - `403`: unsafe intent rejected.
 - `401`: authority/signature failure.
 - `400`: invalid packet.
+- `429`: rate limit exceeded; `negotiation_payload` carries `action: "BACK_OFF"` and `retry_after_ms` (the HTTP server also sets `Retry-After` for per-address limits).
 
 Every response includes a `correlation_id`. `GET /health` returns `{"status": "ok", "service": "loom-atp"}`.
 
@@ -309,11 +315,36 @@ Loom is being prepared as an entry to Imagine Cup 2027. The format is a startup 
 
 The full plan, rubric mapping, ten-service Azure set, evidence checklist, and timeline are in [`docs/competition/score_to_10_plan.md`](docs/competition/score_to_10_plan.md). Open items that matter most: incorporation, a startup Azure subscription, live Azure-mode evidence, and customer validation.
 
+## Audit Log and Rate Limiting
+
+### Audit log
+
+Set `LOOM_AUDIT_LOG` to a file path and every handshake outcome is appended as one JSON line (accepted, conflict, unsafe, bad signature, rate limited, invalid):
+
+```powershell
+$env:LOOM_AUDIT_LOG="audit\loom-audit.jsonl"
+python -m core.api.server
+```
+
+Each record holds the time, status, correlation ID, agent ID, resource, a SHA-256 digest of the intent, whether the packet was signed and a short fingerprint of its signature, plus the hash of the previous record. The raw intent text and the signature are never written. Verify a file any time:
+
+```powershell
+python -m core.audit verify audit\loom-audit.jsonl
+```
+
+This prints `OK` when the hash chain is intact, or the first broken line when a record was edited, deleted, or reordered. It is **tamper-evident, not tamper-proof**: someone who can rewrite the whole file can also rewrite the whole chain, so for a stronger guarantee the latest head hash should be stored somewhere the writer cannot change. On a container without a mounted volume the file disappears with the container, so mount storage or ship the log elsewhere. The log is off unless `LOOM_AUDIT_LOG` is set.
+
+### Rate limiting
+
+- **Per agent** (on by default): at most `LOOM_RATE_LIMIT_AGENT_MAX` (default 30) requests per `LOOM_RATE_LIMIT_AGENT_WINDOW` seconds (default 10) for each `agent_id`. Over the limit the response is `429` with `negotiation_payload.action = "BACK_OFF"` and a `retry_after_ms`. Invalid packets do not use up an agent's allowance. Set the max to `0` to disable it.
+- **Per client address** (off by default): set `LOOM_RATE_LIMIT_IP_MAX` (and `LOOM_RATE_LIMIT_IP_WINDOW`) to limit one address. The response is `429` with a `Retry-After` header. It is off by default because the simulator sends hundreds of requests from one address on purpose. Only a short digest of the address is written to the audit log.
+- The limiters keep their counters in memory per process, so with several server instances each one limits on its own. They slow down a flood from one agent or address; they are not a defence against a distributed attack.
+
 ## Known Limitations
 
 - **Safety screening is a keyword list locally.** It blocks a few terms (delete, hack, bypass, malware, steal, exploit) and will pass many unsafe intents. Real screening depends on the Azure Content Safety path, which is not live-validated.
 - **Signing is shared-secret HMAC.** It authenticates and prevents replay, but either side could have produced a signature, so it does not provide non-repudiation. Public-key signatures are planned.
-- **No Entra ID verification, audit trail, or rate limiting yet.**
+- **No Entra ID verification yet.** The audit log is a local tamper-evident file (not tamper-proof, and ephemeral on a container without a volume), and rate limiting is in-memory per process.
 - **Negotiation is synthetic.** The suggested alternative resource and retry backoff are demo logic, not a negotiation policy.
 - **The local ledger is in memory and single-process.** Cross-process and cross-region locking relies on the Cosmos DB adapter, which has not been tested against real contention.
 - **The API uses the standard-library HTTP server,** suitable for local and demo use only.
@@ -325,7 +356,9 @@ The full plan, rubric mapping, ten-service Azure set, evidence checklist, and ti
 - `core/models.py`: packet and response models.
 - `core/config.py`: environment-driven configuration.
 - `core/ai/`: local and Azure intent and safety services.
-- `core/security/`: signing, signature verification, and replay protection.
+- `core/security/`: signing, signature verification, and replay protection (the nonce check is lock-protected).
+- `core/audit.py`: hash-chained audit log and the `python -m core.audit verify` command.
+- `core/ratelimit.py`: sliding-window rate limiter.
 - `core/database/`: local atomic ledger and Cosmos DB adapter.
 - `core/api/`: local HTTP API gateway.
 - `sdk/python/`: Python client SDK.
@@ -354,7 +387,7 @@ GitHub Actions runs on every push and pull request:
 1. **Customer discovery:** about 15 interviews with agent builders, marketplace and e-commerce platform engineers, and operations teams; decide whether to keep or change the wedge.
 2. **Company and Azure subscription:** incorporate, enroll in Microsoft for Startups, create the startup subscription.
 3. **Live Azure mode:** real Foundry intent parsing, Content Safety, and Cosmos locks with captured evidence (public `/health`, one `201` and one `409` for the same resource, service metrics).
-4. **Security:** public-key signatures, persistent audit trail, rate limiting, Entra ID or an explicit scope-out.
+4. **Security:** public-key signatures, a stronger local safety check, Entra ID or an explicit scope-out (the audit log and rate limiting now exist locally; anchoring the audit head hash remotely is still open).
 5. **Load evidence:** 100 and 1,000 agent runs (then larger) with saved latency and conflict metrics.
 6. **Infrastructure as code** for all required Azure services.
 7. **TypeScript SDK** and a minimal agent integration sample.
