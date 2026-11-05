@@ -121,6 +121,12 @@ jobs:
               Path("website/app.js"),
               Path("website/hero-intro.js"),
               Path("website/landing.js"),
+              Path("website/config.js"),
+              Path("website/robots.txt"),
+              Path("website/404.html"),
+              Path("website/assets/loom-mark.png"),
+              Path("website/assets/favicon-32.png"),
+              Path("website/assets/og-image.png"),
               Path("website/styles.css"),
               Path("website/README.md"),
           ]
@@ -140,6 +146,9 @@ jobs:
               'href="demo.html"',
               'src="hero-intro.js"',
               'src="landing.js"',
+              'class="skip-link"',
+              'property="og:image"',
+              'assets/loom-mark.png',
               "data-reveal",
           ]
           demo_needles = [
@@ -148,7 +157,9 @@ jobs:
               'id="runSimulation"',
               'href="styles.css"',
               'href="index.html"',
+              'src="config.js"',
               'src="app.js"',
+              'id="runAnnounce"',
           ]
           intro_needles = [
               "PALETTE",
@@ -158,6 +169,7 @@ jobs:
           js_needles = [
               'const DEFAULT_API_BASE_URL = "http://127.0.0.1:8080";',
               'const API_BASE_URL = resolveApiBaseUrl();',
+              'function announceResult',
               'fetch(`${API_BASE_URL}/health`',
               'fetch(`${API_BASE_URL}/v1/handshake`',
               'runButton.addEventListener("click"',

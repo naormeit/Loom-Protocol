@@ -28,6 +28,18 @@ function resolveApiBaseUrl() {
   } catch (error) {
     // Fall through to the default on a malformed value.
   }
+  // Optional site-wide default set in config.js (used when the site is hosted).
+  try {
+    const configured = window.LOOM_CONFIG && window.LOOM_CONFIG.apiUrl;
+    if (configured) {
+      const url = new URL(configured);
+      if (url.protocol === "http:" || url.protocol === "https:") {
+        return url.origin;
+      }
+    }
+  } catch (error) {
+    // Fall through to the default on a malformed value.
+  }
   return DEFAULT_API_BASE_URL;
 }
 
@@ -412,8 +424,8 @@ function draw() {
     return;
   }
 
-  const showTimeline = height >= 300;
-  const timelineHeight = showTimeline ? 70 : 0;
+  const showTimeline = height >= 230;
+  const timelineHeight = showTimeline ? Math.min(70, Math.round(height * 0.22)) : 0;
   const gridTop = 76;
   const gridBottom = height - 28 - (showTimeline ? timelineHeight + 12 : 0);
 
@@ -430,6 +442,28 @@ function draw() {
   if (run.running || settling || moving) {
     requestFrame();
   }
+}
+
+const runAnnounce = document.querySelector("#runAnnounce");
+
+// The grid is drawn on a canvas, so say the outcome in text for screen readers.
+function announceResult() {
+  if (!runAnnounce || !run) {
+    return;
+  }
+  const prefix = run.simulated ? "Simulated run, not measured. " : "";
+  let sentence;
+  if (run.winnerIndex >= 0) {
+    sentence =
+      `${run.count} agents sent requests. Agent ${run.winnerIndex + 1} got the lock after ` +
+      `${Math.round(run.firstLockMs)} milliseconds. ${run.conflictCount} other agents were told to renegotiate.`;
+  } else {
+    sentence = `${run.count} agents sent requests. No lock was granted: ${run.conflictCount} conflicts, ${run.errors} errors.`;
+  }
+  if (run.errors && run.winnerIndex >= 0) {
+    sentence += ` ${run.errors} requests failed.`;
+  }
+  runAnnounce.textContent = prefix + sentence;
 }
 
 function updateMetrics() {
@@ -533,6 +567,7 @@ async function runSimulation() {
       await runLiveHandshake(count);
       run.running = false;
       runStatus.textContent = "Resolved";
+      announceResult();
       draw();
       return;
     } catch (error) {
@@ -551,6 +586,7 @@ async function runSimulation() {
   latencyLabel.textContent = "simulated, not measured";
   lastResponse.textContent = "API not running";
   runStatus.textContent = "Simulated";
+  announceResult();
   draw();
 }
 

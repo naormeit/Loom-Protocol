@@ -21,6 +21,14 @@ The website checks `http://127.0.0.1:8080/health` by default. To point it at a h
 
 `hero-intro.js` plays a short decorative intro: particles (electric blue, soft lavender, acid green; see `PALETTE` in `hero-intro.js`) form a sphere, morph into the Loom logo (sampled from `assets/loom-logo.png`), then the page content fades in. As the particles land, a clean cut-out of the real logo is cross-faded in over them so the finished mark has no gaps. It lasts about 3.8 seconds in total; adjust `TIMING` at the top of `hero-intro.js` to change that. It does not represent any request or protocol data. It plays once per browser session, is skipped for visitors who prefer reduced motion, and can be skipped with a click or any key. Use `?intro=1` to force it or `?intro=0` to disable it. Opened directly from `file://`, the logo cannot be sampled and the particles settle into a ring instead; serve the folder over HTTP for the full effect.
 
+## Settings, Typography And Accessibility
+
+- `config.js` holds the site-wide API address (`apiUrl`). Leave it empty for local use; set it to the hosted gateway when you publish. `?api=` overrides it.
+- Fonts are the visitor's system fonts on purpose, with one bold weight (700), and nothing external is loaded.
+- A "Skip to content" link, 44 px nav links, visible focus outlines, and an `aria-live` announcement of each simulator result (the grid itself is a canvas).
+- Share tags (Open Graph and Twitter), icons, `robots.txt` and `404.html` are in place. The share image URL is absolute and points at GitHub's raw host; replace it with the site's own URL once published, and add a canonical link, `og:url` and a sitemap then.
+- `assets/loom-mark.png`, the favicons and `assets/og-image.png` were generated from `assets/loom-logo.png`, which is kept for the intro (it samples that file, so do not crop it).
+
 ## Landing Animation (`index.html`)
 
 Decorative only, plain CSS and JavaScript. `landing.js` fades and raises sections into view as you scroll (content stays visible without JavaScript). The illustration in the hero loops for 5 seconds with CSS keyframes: agents send along flowing lines, Loom pulses, the winner pops with its "201 lock" label, then the retry agents light up. Buttons and cards have hover states and links have a visible focus outline. With `prefers-reduced-motion` all of it is switched off.

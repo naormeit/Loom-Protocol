@@ -8,14 +8,28 @@
       name="description"
       content="When many AI agents want the same scarce thing, Loom decides who gets it: one atomic lock, structured retry guidance for everyone else."
     >
-    <link rel="icon" type="image/png" href="assets/loom-logo.png">
+    <meta name="theme-color" content="#f7f3ec">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Loom Protocol">
+    <meta property="og:title" content="Loom Protocol | Atomic reservations for AI agents">
+    <meta property="og:description" content="When many AI agents want the same scarce thing, Loom decides who gets it: one atomic lock, structured retry guidance for everyone else.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/naormeit/Loom-Protocol/main/website/assets/og-image.png">
+    <meta property="og:image:alt" content="Loom Protocol: when many AI agents want the same thing, Loom decides who gets it.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Loom Protocol | Atomic reservations for AI agents">
+    <meta name="twitter:description" content="When many AI agents want the same scarce thing, Loom decides who gets it: one atomic lock, structured retry guidance for everyone else.">
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/naormeit/Loom-Protocol/main/website/assets/og-image.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body id="top">
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="topbar">
       <a class="brand" href="#top" aria-label="Loom Protocol home">
         <span class="brand-mark" aria-hidden="true">
-          <img src="assets/loom-logo.png" alt="">
+          <img src="assets/loom-mark.png" alt="" width="56" height="56">
         </span>
         <span>Loom Protocol</span>
       </a>
@@ -28,7 +42,7 @@
       </nav>
     </header>
 
-    <main id="top">
+    <main id="main" tabindex="-1">
       <section class="hero landing-hero" aria-labelledby="hero-title">
         <div class="hero-copy">
           <p class="eyebrow" data-reveal>Microsoft Imagine Cup 2027 project</p>
@@ -232,8 +246,8 @@
     </main>
 
     <footer class="footer">
-      <span>Loom Protocol</span>
-      <span><a href="demo.html">Live demo</a> · Atomic reservation middleware for agentic transactions.</span>
+      <span>Loom Protocol. A student project built for the Microsoft Imagine Cup 2027; not affiliated with or endorsed by Microsoft.</span>
+      <span><a href="demo.html">Live demo</a> · <a href="https://github.com/naormeit/Loom-Protocol" target="_blank" rel="noopener">Code on GitHub</a> (Apache-2.0)</span>
     </footer>
 
     <script src="landing.js"></script>
