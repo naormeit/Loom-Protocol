@@ -1,268 +1,100 @@
-# Loom Protocol 10/10 Competition Readiness Plan
+# Loom Protocol: Imagine Cup 2027 Plan
 
-## Goal
+Rewritten 2026-11-05 against the Imagine Cup 2027 Official Rules (https://aka.ms/ImagineCup2027TCs). Earlier versions of this plan assumed the pre-2027 student format. That format is gone.
 
-Turn Loom Protocol from a strong concept prototype into a judge-ready Imagine Cup 2027 submission with a defensible MVP, real Microsoft AI usage, measurable technical proof, customer validation, and a polished demo package.
+## What the 2027 competition actually is
 
-This plan targets a strict judge, not a friendly reader. A 10/10 score means the repository, demo, cloud deployment, and pitch evidence can survive technical review without relying on simulated claims.
+- A startup competition run through Microsoft for Startups. Entries go through Award Force and close **2027-02-28 23:59 CST**. Entries cannot be edited after submission.
+- The entrant must be a **legal entity founded on or after 2024-11-02**, privately held, for-profit, with at most four official team members, each 18 or older.
+- By the deadline the startup must be **using at least ten Azure services** on one Azure subscription, with **at least USD 1.00 of usage on each**. Free tiers and free grants that bill 0.00 do not count.
+- Stages: Stage 1 application scoring (rolling to Feb 28), top 30 per category to expert review (Mar 1-12), top 10 to recorded live interviews (Mar 16-31), final judging in April, World Championship May-June.
+- Category: **Student Startup**. Every founding team member must be enrolled at an accredited institution at some point between 2026-09-30 and 2027-05-31. Student entries cannot be Finalists; the Student Prize is the ceiling (USD 25,000 plus credits). Industry categories add a 100-point category rubric that scores funding, ARR and contract value, which Loom cannot compete on this cycle.
+- Entry materials: Stage 1 written responses (product, problem, target user, market, business model, traction, go-to-market, Microsoft technologies used); Stage 2 pitch deck, 2-3 minute demo video, Azure architecture diagram, production-architecture and differentiation responses. Everything in English.
+- IP stays with the entrant. Microsoft takes a broad license to use the entry for the competition and its promotion.
 
-## Current Baseline
+## Stage 1 (Student) rubric and where Loom stands
 
-- The repo demonstrates the ATP story through a local Python kernel, HTTP API gateway, static website demo, Python SDK, local atomic ledger, CLI/scenario demos, and collision simulations.
-- Azure OpenAI / Azure AI Foundry-style intent parsing, Azure AI Content Safety, and Azure Cosmos DB adapters exist behind `LOOM_MODE=azure`, but live cloud credentials, deployed resources, and integration evidence are still required.
-- The Python SDK is implemented with optional HMAC-SHA256 packet signing; a TypeScript SDK is still missing.
-- CI exists for Python 3.10 and 3.11 import smoke, unit tests, and entrypoint compilation, but it does not yet cover Docker, examples, Bicep validation, website checks, or live Azure integration.
-- The local security MVP includes signed packets, nonce/timestamp freshness checks, and replay rejection; Entra ID, persistent audit trails, and rate limiting remain future production work.
-- There is still no hosted API, real cloud state evidence, founder-led validation evidence, pitch deck, demo video, or public competition package in the repo.
-- The competition narrative is now anchored around the limited-inventory agent commerce wedge; the next work is proving it with live Azure services, metrics, validation, and polished submission materials.
+| Criterion | Points | Scored on | Loom today |
+| --- | ---: | --- | --- |
+| Product and Technical Approach | 40 | customer validation, technical progress, cloud and AI use, Azure production maturity | Strong local MVP. Hosted deployment is `LOOM_MODE=local` only. No customer validation. |
+| Business and Startup Profile | 25 | stage, business model, funding | No pricing or buyer defined. |
+| Team and Execution Potential | 20 | team makeup and commitment | Confirm team size and roles; up to four members, all enrolled students. |
+| Problem and Market Opportunity | 15 | users or customers, clarity of problem and target customer | Problem is clear. No users or customers yet. |
 
-## Target Scores
+Stage 2 (100 points): pitch deck 20, demo video 15, Azure architecture diagram 20, production architecture response 20, customer differentiation 10, Microsoft growth alignment 15.
 
-| Factor | Current | 10/10 Target |
-| --- | ---: | --- |
-| Idea / ambition | 8 | Keep the bold protocol story, but anchor it in one urgent real-world transaction bottleneck. |
-| Problem clarity | 7 | Show a concrete before/after use case with measurable failure from current APIs. |
-| Technical execution | 4 | Ship a deployed MVP with real Azure services, SDKs, tests, metrics, and repeatable setup. |
-| Microsoft AI requirement | 4 | Make at least two Microsoft AI services required in the product path, not optional labels. |
-| MVP demonstrability | 5 | Provide a hosted judge demo, local fallback demo, scripts, sample packets, and a 2-minute flow. |
-| Security credibility | 4 | Implement signed ATP packets, identity checks, audit trails, rate limits, and threat model docs. |
-| Business viability | 4 | Replace "Loom Tax" as the main claim with a credible wedge, buyer, pricing model, and GTM. |
-| Founder-led validation | 1 | Add interview notes, pilot targets, waitlist/LOI evidence, and iteration history. |
-| Documentation | 6 | Align docs with working code, remove overclaims, add architecture diagrams and runbooks. |
-| Competition readiness | 4 | Prepare deck, pitch video, demo video, public URLs, technical appendix, and judge FAQ. |
+## Hard gates (nothing else matters until these are done)
 
-## Product Wedge
+1. **Incorporate.** Register a private limited company (MCA SPICe+). Assign Loom IP from personal ownership to the company. Obtain a registration number and tax details that will match business verification.
+2. **Register on Award Force**, select Student Startup, and wait for the eligibility email and the unique Microsoft for Startups referral code (generally within 24 business hours).
+3. **Redeem the code, enroll in Microsoft for Startups**, complete business verification, and create or connect the Azure subscription for Loom. Do not submit the Azure for Students subscription; it is not the startup subscription and it is the subscription that blocks Azure OpenAI and Content Safety.
+4. **Reach ten billing Azure services with USD 1+ each** (see below), kept above the threshold continuously through judging.
 
-Choose one primary use case for the MVP. Do not pitch Loom as universal internet infrastructure first.
+## Ten-service Azure plan
 
-Recommended wedge: limited-inventory agent commerce.
+Count a service only if Cost Analysis shows at least USD 1.00 for it on the submitted subscription. Confirm each service is on Microsoft's eligible list before relying on it.
 
-Example scenario:
-- 1,000 shopping agents attempt to reserve the same limited product drop.
-- Standard direct API calls create overbooking, retries, and vendor overload.
-- Loom receives agent intent, verifies safety and authority, locks the resource atomically, and returns either a final lock or a negotiation payload.
+| # | Service | Role in Loom | Notes |
+| ---: | --- | --- | --- |
+| 1 | Azure Container Apps | ATP gateway | Already deployed (local mode). |
+| 2 | Azure Container Registry (Basic) | Loom image | Fixed daily charge. |
+| 3 | Azure Cosmos DB | Conditional-write lock ledger | Free tier off, or usage may bill 0.00. |
+| 4 | Azure OpenAI / Foundry | Structured intent parsing | Needs a subscription and region that allow it. |
+| 5 | Azure AI Content Safety | Intent risk screening | Same region constraint. |
+| 6 | Azure Key Vault | Signing keys and service secrets | Premium if a HSM-backed key is used. |
+| 7 | Application Insights / Log Analytics | Correlation-ID tracing, audit queries | Free ingestion allowance can leave cost at 0.00. |
+| 8 | Azure Cache for Redis (Basic) | Nonce replay cache | Fixed hourly charge. |
+| 9 | Azure Load Testing | 100 / 1,000 / 10,000 agent runs | Also produces the metrics evidence below. |
+| 10 | Azure Functions or Event Hubs | Lock-expiry sweeper or audit event stream | Pick the one with a real role. |
 
-Why this wedge works:
-- It is easy to understand in a demo.
-- It fits Retail and Consumer Goods, Financial Services, and Cybersecurity angles.
-- It makes concurrency, safety, identity, and auditability visible.
-- It avoids needing a real airline, hospital, or bank partnership for the first MVP.
+Microsoft Entra ID is in the architecture narrative but is not implemented. Do not count or claim it until token validation exists.
 
-## Architecture To Build
+## Engineering work that scores
 
-### 1. ATP Gateway
+Ordered by value to the rubric.
 
-Files:
-- `core/api/app.py`
-- `core/api/routes.py`
-- `core/models/packet.py`
-- `core/models/result.py`
-- `tests/api/test_gateway.py`
+1. **Real `LOOM_MODE=azure` deployment** with Foundry intent parsing, Content Safety, and Cosmos locks on the startup subscription. Evidence: public `/health`, one 201 and one 409 for the same resource, Azure-side usage metrics, Cosmos lock records. Keep local, hosted-local, and Azure-mode proof clearly separated.
+2. **Infrastructure as code for all ten services** in `infra/main.bicep`. Today it defines only the Container Apps environment and app; ACR and Cosmos were created by hand.
+3. **Load metrics.** 100 and 1,000 agent runs first, then 10,000. Save latency, conflict rate, and lock counts as JSON and Markdown. Run them with Azure Load Testing so they also count toward the usage requirement.
+4. **Security claims that match code.**
+   - Replace shared-secret HMAC with public-key signatures (Ed25519), keys in Key Vault, before using the word "non-repudiation". Until then, describe the current scheme as authenticated and replay-protected only.
+   - Add a persistent audit trail (packet fingerprint, decision, timestamps, model metadata).
+   - Add rate limiting.
+   - Either implement Entra ID token validation or scope it out explicitly.
+5. **Website.** `?api=` query parameter now selects the backend, and `LOOM_ALLOWED_ORIGINS` lets the API accept the hosted site's origin. Remaining: make visual-fallback mode unmistakable, and publish the site on a real domain (the application asks for a company website).
+6. **TypeScript SDK** and a minimal agent integration sample.
+7. **CI:** add website browser smoke check, replace kernel `print` output with logging.
 
-Requirements:
-- Expose `POST /v1/handshake`.
-- Validate packet schema with typed models.
-- Return stable ATP status codes: `201 LOCKED`, `409 CONFLICT`, `403 UNSAFE_INTENT`, `401 INVALID_AUTHORITY`, `400 INVALID_PACKET`.
-- Include correlation IDs in every response.
-- Support local mode and Azure mode through configuration.
+## Evidence that scores (currently zero)
 
-### 2. Microsoft AI Intent Gateway
+- **Customer validation.** 15 interviews with marketplace operators, ecommerce platform engineers, and agent builders. Three recurring pain patterns. One design partner, pilot, waitlist, or LOI. An iteration log showing what changed.
+- **Campus pilot** at the university for users and MAU, as originally planned for fall 2026.
+- **Business model.** Name the first buyer and user. Replace the "Loom Tax" and "monopoly" framing with a credible early pricing model. Compare against vendor APIs, queues, payment pre-authorization, distributed locks, and agent frameworks.
+- **Team.** Document roles, time commitment, and technical composition. Confirm every founder meets the student-enrollment window.
 
-Files:
-- `core/ai/intent_parser.py`
-- `core/ai/content_safety.py`
-- `tests/ai/test_intent_parser.py`
-- `tests/ai/test_content_safety.py`
+## Submission package
 
-Requirements:
-- Use Azure AI Foundry or Azure OpenAI to convert raw agent text into structured intent fields.
-- Use Azure AI Content Safety to classify malicious or unsafe transaction intent.
-- Provide a deterministic local stub for offline tests.
-- Log model/service metadata without logging private user secrets.
+- Written responses for Stage 1 and Stage 2, in English, with claims tied to evidence in the repo.
+- Pitch deck (15 slides maximum), 2-3 minute demo video, Azure architecture diagram, production-architecture response, differentiation response, Microsoft growth-alignment response.
+- Judge FAQ and technical appendix.
+- Prepare everything before 2027-02-28 even though Stage 2 materials are requested later.
 
-### 3. Atomic State Ledger
+## Timeline
 
-Files:
-- `core/database/ledger.py`
-- `core/database/cosmos_client.py`
-- `tests/database/test_atomic_locks.py`
+| Window | Goal |
+| --- | --- |
+| Nov 2026 | Start incorporation. Register on Award Force (Student Startup). Begin interviews and campus pilot. Align Spec and Master docs with the Overview (drop unsupported claims). |
+| Dec 2026 | Redeem code, enroll, business verification, create startup subscription. Deploy Azure mode. Capture 201 / 409 evidence. |
+| Jan 2027 | Bicep for all ten services. Load-test reports. Public-key signing, audit trail. Validation and pricing docs. |
+| Feb 1-20, 2027 | Deck, demo video, architecture diagram, written responses. Public hosted demo and domain. |
+| Feb 20-28, 2027 | Verify Cost Analysis shows USD 1+ on each of the ten services. Re-read every claim against the repo. Submit. |
 
-Requirements:
-- Replace the in-memory dictionary with a Cosmos DB implementation using conditional create/upsert and ETag or unique-key semantics.
-- Preserve a local in-memory ledger only as `LocalLedger` for tests and offline demos.
-- Store lock owner, resource hash, expiry, packet hash, signature fingerprint, and audit timestamps.
-- Add TTL-based expiry behavior.
-- Prove one-winner semantics under concurrent load.
+## Definition of done
 
-### 4. Identity And Proof
-
-Files:
-- `core/security/signing.py`
-- `core/security/authority.py`
-- `tests/security/test_signing.py`
-- `docs/spec/security_model.md`
-
-Requirements:
-- Sign ATP packets with public/private key cryptography for local MVP.
-- Add Entra ID verification path for Azure mode.
-- Verify packet signature before intent execution.
-- Add replay protection with nonce and timestamp.
-- Document the trust model, failure modes, and what remains out of scope.
-
-### 5. SDKs
-
-Files:
-- `sdk/python/loom_protocol/__init__.py`
-- `sdk/python/loom_protocol/client.py`
-- `sdk/python/README.md`
-- `sdk/typescript/src/client.ts`
-- `sdk/typescript/package.json`
-- `sdk/typescript/README.md`
-- `tests/sdk/test_python_client.py`
-
-Requirements:
-- Provide a clean client method such as `reserve(resource_id, intent, expiry_ms)`.
-- Include signature support.
-- Include retry handling for negotiation payloads.
-- Add examples for Python and TypeScript agents.
-
-### 6. Load And Demo Harness
-
-Files:
-- `tests/stress/test_concurrent_locks.py`
-- `examples/scenarios/limited_inventory_drop.py`
-- `examples/scenarios/report_metrics.py`
-- `docs/demo/judge_demo_script.md`
-
-Requirements:
-- Simulate 100, 1,000, and 10,000 agents.
-- Capture latency, conflict rate, successful locks, unsafe rejections, and retry outcomes.
-- Output a judge-readable metrics summary.
-- Keep the demo deterministic enough for a recorded video.
-
-### 7. Cloud Deployment
-
-Files:
-- `infra/main.bicep`
-- `infra/README.md`
-- `.env.example`
-- `.github/workflows/ci.yml`
-- `docs/operations/deployment_runbook.md`
-
-Requirements:
-- Deploy API to Azure Functions or Azure Container Apps.
-- Provision Cosmos DB and required app settings.
-- Document Azure AI Foundry / Azure OpenAI and Content Safety setup.
-- Add CI for linting, tests, and package checks.
-- Provide a public demo endpoint or a reproducible deployment path.
-
-## Evidence To Collect
-
-### Founder-Led Validation
-
-Files:
-- `docs/validation/interview_summary.md`
-- `docs/validation/personas.md`
-- `docs/validation/experiment_log.md`
-- `docs/validation/loi_or_pilot_tracker.md`
-
-Minimum bar:
-- 15 interviews with developers, marketplace operators, ecommerce founders, AI-agent builders, or platform/security engineers.
-- 3 recurring pain patterns documented with quotes or paraphrased notes.
-- 1 design partner, waitlist, pilot conversation, or letter of intent.
-- Clear iteration log showing what changed because of feedback.
-
-### Business Model
-
-Files:
-- `docs/business/wedge_strategy.md`
-- `docs/business/pricing.md`
-- `docs/business/competitive_landscape.md`
-
-Minimum bar:
-- Define initial buyer and user.
-- Explain why this starts as middleware/API infrastructure, not a consumer app.
-- Replace the broad "tax the agentic economy" claim with a credible early pricing model.
-- Compare against direct vendor APIs, queues, payment pre-auth, distributed locks, and agent frameworks.
-
-### Competition Package
-
-Files:
-- `docs/submission/pitch_deck_outline.md`
-- `docs/submission/demo_video_script.md`
-- `docs/submission/pitch_video_script.md`
-- `docs/submission/judge_faq.md`
-- `docs/submission/technical_appendix.md`
-
-Minimum bar:
-- 15-slide maximum deck.
-- 3-minute pitch script.
-- 2-minute product demo script.
-- Architecture diagram and Microsoft technology list.
-- Public demo URL and public video URLs.
-- Short answers for likely judge objections.
-
-## Documentation Corrections
-
-Before submission, update existing docs so claims match implementation state.
-
-Files:
-- `README.md`
-- `COMPLIANCE.md`
-- `docs/spec/architecture.md`
-- `docs/spec/atp_spec.md`
-
-Required corrections:
-- Keep README, compliance, architecture, and ATP spec claims aligned with the current implementation.
-- Keep simulated or local-only services clearly separated from live Azure proof.
-- Add or maintain status tables that distinguish `Implemented`, `In progress`, and `Planned`.
-- Keep local setup, Azure setup, testing, website, and demo commands current.
-- Add exact Microsoft AI services used in the live product path once Azure validation evidence exists.
-
-## Test Strategy
-
-Minimum automated tests:
-- Packet schema validation.
-- Unsafe intent rejection.
-- Signature verification and replay rejection.
-- One-winner lock behavior for local ledger.
-- Cosmos conditional write behavior behind an integration-test flag.
-- SDK request/response behavior.
-- API status code and error contract.
-- Stress harness metrics output.
-
-Minimum manual checks:
-- Local demo from clean clone.
-- Hosted endpoint demo.
-- Azure service logs visible.
-- 2-minute demo recording completes without hidden setup.
-- Judge can reproduce or understand every claim in the deck.
-
-## Execution Order
-
-1. Keep the MVP focused on limited-inventory agent commerce.
-2. Keep the local typed packet, result, ledger, safety, parser, API gateway, Python SDK, signing, and replay-protection path stable.
-3. Clean up PR and repo hygiene issues, including stale files and stale claims.
-4. Expand CI with Docker build, example smoke tests, Bicep validation, and website checks.
-5. Wire Bicep and deployment docs to the real Loom container image and required Azure configuration.
-6. Validate Azure OpenAI / Azure AI Foundry-style intent parsing, Azure AI Content Safety, and Cosmos DB against live resources.
-7. Add load harness metrics reports for 100, 1,000, and stress-size local scenarios.
-8. Add judge demo script, recorded demo script, architecture diagram, technical appendix, and release checklist.
-9. Collect validation evidence and business proof.
-10. Package deck, pitch video, demo video, public URLs, and judge FAQ.
-
-## Definition Of Done
-
-The project can be considered 10/10-ready when:
-
-- A judge can run the local demo from the README.
-- A judge can watch a hosted demo using real Azure services.
-- The product requires at least two Microsoft AI services in the real transaction path.
-- The lock ledger proves one-winner behavior under concurrent load.
-- Security claims are implemented or explicitly scoped.
-- The SDKs work for at least one realistic agent integration.
-- Tests and CI pass.
-- Documentation contains no overclaims.
-- Founder-led validation evidence is present.
-- The pitch explains a specific buyer, market wedge, and business model.
-- Submission materials are complete and public links work.
+- Incorporated entity with matching business verification.
+- Startup Azure subscription showing USD 1+ on ten services.
+- Public hosted demo running in Azure mode with live evidence.
+- Load-test metrics for at least 100 and 1,000 agents.
+- No security or architecture claim that the code does not back.
+- Interview, pilot, and pricing evidence in the repo.
+- Complete written responses and Stage 2 materials in English.
