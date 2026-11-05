@@ -8,6 +8,8 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 
 > **Honest status:** Loom is a working **local MVP**. The hosted Azure deployment so far runs in `LOOM_MODE=local`. The Azure OpenAI, Content Safety, and Cosmos DB adapters exist but have **not** been validated against live Azure services. No customer validation exists yet. See [Status](#status) and [Known Limitations](#known-limitations).
 
+**Links:** [live site](https://naormeit.github.io/Loom-Protocol/) (landing page; the live demo at `https://naormeit.github.io/Loom-Protocol/website/demo.html` runs as SIMULATED until a hosted gateway exists) and the [v0.1.0 pre-release](https://github.com/naormeit/Loom-Protocol/releases/tag/v0.1.0).
+
 ## Contents
 
 - [Status](#status)
@@ -40,6 +42,8 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Local intent parser and content-safety checker | Implemented | Deterministic; the safety check is a keyword list, not real screening. |
 | Static website: landing page plus live demo page with per-agent response grid | Implemented | See [The Website](#the-website). |
 | Landing-page particle intro | Implemented | Decorative only; plays on the landing page. |
+| Public site on GitHub Pages | Implemented | Live at https://naormeit.github.io/Loom-Protocol/. The demo page shows SIMULATED because no gateway is hosted yet. |
+| Tagged release | Implemented | [v0.1.0](https://github.com/naormeit/Loom-Protocol/releases/tag/v0.1.0), marked as a pre-release. |
 | Azure-mode adapters (OpenAI-style parser, Content Safety, Cosmos DB) | Implemented, not live-validated | Unit-tested with mocks only. |
 | Hosted deployment on Azure Container Apps | Partial | Deployed and health-checked in `LOOM_MODE=local` only. |
 | CI (Python 3.10/3.11, website checks, Docker build, Bicep validation) | Implemented | See [CI](#continuous-integration). |
@@ -130,7 +134,7 @@ Expected result: one secured lock and 99 agents receiving conflict negotiation r
 
 ## The Website
 
-The static website in `website/` has two pages and needs no build step:
+The site is live at **https://naormeit.github.io/Loom-Protocol/** (the root address redirects to the landing page). The static website in `website/` has two pages and needs no build step:
 
 - **Landing page** (`index.html`): the front door. A short story for a first-time visitor: what Loom is, the problem (framed as a hypothesis), how it works in three steps, who it might be for, an honest "where it stands" section, and two calls to action. It opens with the particle intro.
 - **Live demo** (`demo.html`): the simulator with real responses, a "how to read the simulator" section, the protocol path, the implementation status, and the proof grid.
@@ -187,7 +191,14 @@ If the API is not reachable, the view is labelled **SIMULATED**, its outcomes ar
 
 #### Publishing the site
 
-The site is static and is not published anywhere yet. When you host it:
+The site is published with GitHub Pages from the root of the `main` branch at https://naormeit.github.io/Loom-Protocol/, and it updates after every push to `main` (a build takes about a minute). The root `index.html` redirects to `website/`, and the demo is at `website/demo.html`.
+
+Things to know about this setup:
+
+- Because Pages publishes from the repository root, every file in the repository is also served as a static file, not just `website/`. The repository is already public. A workflow that publishes only `website/` would be tidier.
+- GitHub shows its own 404 page for unknown addresses, because Pages looks for `404.html` at the root and ours is in `website/`.
+
+The demo page shows SIMULATED until a gateway is hosted. To make it live, host the gateway and then:
 
 1. Set `apiUrl` in `website/config.js` to your hosted gateway (for example `https://loom-api.example.com`). A `?api=` query parameter still overrides it.
 2. Add the site's origin to the gateway's `LOOM_ALLOWED_ORIGINS`.
