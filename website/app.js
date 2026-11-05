@@ -40,20 +40,39 @@ if (apiEndpoint) {
 const colors = {
   background: "#111a18",
   grid: "rgba(255, 250, 242, 0.08)",
-  agent: "#78d0c7",
-  winner: "#d89a2b",
+  waiting: "rgba(120, 208, 199, 0.22)",
+  lock: "#d89a2b",
   conflict: "#c84f38",
-  lock: "#fffaf2",
+  error: "#8a8f8d",
   text: "#fffaf2",
   muted: "rgba(255, 250, 242, 0.62)"
 };
 
-let agents = [];
+const FLASH_MS = 450;
+
+// One run = one cell per agent. In live mode each cell is filled when that
+// agent's real HTTP response arrives; nothing is decided ahead of time.
+let run = null;
 let animationFrame = null;
-let startTime = 0;
-let phase = "ready";
 let backendAvailable = false;
-let lastRunSource = "visual";
+
+function newRun(count, source) {
+  return {
+    source,
+    count,
+    cells: Array.from({ length: count }, () => ({ status: null, at: 0 })),
+    timeline: [],
+    startedAt: 0,
+    running: false,
+    firstLockMs: null,
+    winnerIndex: -1,
+    lastArrival: 0,
+    locks: 0,
+    conflictCount: 0,
+    errors: 0,
+    simulated: source !== "api"
+  };
+}
 
 function fitCanvas() {
   const ratio = window.devicePixelRatio || 1;
@@ -64,133 +83,187 @@ function fitCanvas() {
   draw();
 }
 
-function createAgents(count) {
-  const rect = canvas.getBoundingClientRect();
-  const centerX = rect.width * 0.68;
-  const centerY = rect.height * 0.5;
-  const winnerIndex = Math.floor(count * 0.37);
+function recordResponse(index, status) {
+  if (!run || run.cells[index].status !== null) {
+    return;
+  }
+  const now = performance.now();
+  const cell = run.cells[index];
+  cell.status = status;
+  cell.at = now;
+  run.lastArrival = now;
+  run.timeline.push({ t: now - run.startedAt, n: run.timeline.length + 1 });
 
-  return Array.from({ length: count }, (_, index) => {
-    const angle = (index / count) * Math.PI * 2;
-    const ring = 0.32 + ((index % 11) / 11) * 0.58;
-    const radiusX = rect.width * ring * 0.5;
-    const radiusY = rect.height * ring * 0.42;
-    return {
-      x: centerX + Math.cos(angle) * radiusX - rect.width * 0.18,
-      y: centerY + Math.sin(angle) * radiusY,
-      originX: centerX + Math.cos(angle) * radiusX - rect.width * 0.18,
-      originY: centerY + Math.sin(angle) * radiusY,
-      targetX: centerX,
-      targetY: centerY,
-      delay: (index % 24) * 10,
-      size: index === winnerIndex ? 5 : 3,
-      winner: index === winnerIndex,
-      settled: false
-    };
-  });
-}
-
-function drawGrid(width, height) {
-  context.strokeStyle = colors.grid;
-  context.lineWidth = 1;
-
-  for (let x = 0; x < width; x += 46) {
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, height);
-    context.stroke();
+  if (status === 201) {
+    run.locks += 1;
+    if (run.firstLockMs === null) {
+      run.firstLockMs = now - run.startedAt;
+      run.winnerIndex = index;
+    }
+  } else if (status === 409) {
+    run.conflictCount += 1;
+  } else {
+    run.errors += 1;
   }
 
-  for (let y = 0; y < height; y += 46) {
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y);
-    context.stroke();
+  locksSecured.textContent = String(run.locks);
+  conflicts.textContent = String(run.conflictCount);
+  requestFrame();
+}
+
+function requestFrame() {
+  if (animationFrame === null) {
+    animationFrame = requestAnimationFrame(() => {
+      animationFrame = null;
+      draw();
+    });
   }
 }
 
-function drawLock(width, height, progress) {
-  const centerX = width * 0.68;
-  const centerY = height * 0.5;
-  const pulse = 1 + Math.sin(progress * Math.PI * 6) * 0.04;
-
-  context.save();
-  context.translate(centerX, centerY);
-  context.scale(pulse, pulse);
-
-  context.fillStyle = "rgba(255, 250, 242, 0.08)";
-  context.beginPath();
-  context.arc(0, 0, 96, 0, Math.PI * 2);
-  context.fill();
-
-  context.strokeStyle = colors.lock;
-  context.lineWidth = 3;
-  context.beginPath();
-  context.roundRect(-44, -12, 88, 62, 8);
-  context.stroke();
-
-  context.beginPath();
-  context.arc(0, -13, 28, Math.PI, 0);
-  context.stroke();
-
-  context.fillStyle = colors.lock;
-  context.beginPath();
-  context.arc(0, 18, 5, 0, Math.PI * 2);
-  context.fill();
-
-  context.restore();
+function gridLayout(width, top, bottom, count) {
+  const gap = 2;
+  const availableHeight = Math.max(20, bottom - top);
+  let size = Math.floor(Math.sqrt((width * availableHeight) / count));
+  size = Math.max(4, Math.min(28, size));
+  let columns = Math.max(1, Math.floor((width + gap) / (size + gap)));
+  let rows = Math.ceil(count / columns);
+  while (rows * (size + gap) > availableHeight && size > 3) {
+    size -= 1;
+    columns = Math.max(1, Math.floor((width + gap) / (size + gap)));
+    rows = Math.ceil(count / columns);
+  }
+  return { size, gap, columns, rows };
 }
 
-function drawLabels(width, height) {
+function cellColor(status) {
+  if (status === 201) {
+    return colors.lock;
+  }
+  if (status === 409) {
+    return colors.conflict;
+  }
+  if (status === null) {
+    return colors.waiting;
+  }
+  return colors.error;
+}
+
+function drawHeader(width) {
+  const label = resourceInput.options[resourceInput.selectedIndex].text;
   context.fillStyle = colors.text;
   context.font = "700 18px Inter, system-ui, sans-serif";
-  context.fillText(resourceInput.options[resourceInput.selectedIndex].text, 24, 34);
+  context.fillText(label, 24, 34);
 
   context.fillStyle = colors.muted;
   context.font = "600 13px Inter, system-ui, sans-serif";
-  const modeLabel = lastRunSource === "api"
-    ? "Live API requests: intent -> safety -> atomic ledger -> lock or negotiation"
-    : "Visual fallback: intent -> safety -> atomic ledger -> lock or negotiation";
-  context.fillText(modeLabel, 24, 58);
-
-  context.fillStyle = "rgba(216, 154, 43, 0.92)";
-  context.fillText("Winner receives 201 Atomic Lock Secured", width * 0.54, height - 36);
-
-  context.fillStyle = "rgba(200, 79, 56, 0.92)";
-  context.fillText("Others receive 409 Conflict + retry guidance", 24, height - 36);
+  const responded = run.timeline.length;
+  let line;
+  if (run.simulated) {
+    line = "SIMULATED - API not running. Start it with: python -m core.api.server";
+  } else if (run.running) {
+    line = `Live API: ${responded} of ${run.count} agents have a response`;
+  } else if (responded === 0) {
+    line = `Live API connected - press Run to send ${run.count} real requests`;
+  } else if (run.winnerIndex >= 0) {
+    line = `Live API: agent #${run.winnerIndex + 1} got the lock at ${Math.round(run.firstLockMs)}ms; ${run.conflictCount} others were told to renegotiate`;
+  } else {
+    line = `Live API: no lock was granted (${run.conflictCount} conflicts, ${run.errors} errors)`;
+  }
+  context.fillText(line, 24, 58, width - 48);
 }
 
-function drawAgents(progress) {
-  const rect = canvas.getBoundingClientRect();
-  const centerX = rect.width * 0.68;
-  const centerY = rect.height * 0.5;
+function drawCells(left, top, width, bottom) {
+  const layout = gridLayout(width, top, bottom, run.count);
+  const now = performance.now();
 
-  for (const agent of agents) {
-    const delayed = Math.max(0, Math.min(1, (progress * 1200 - agent.delay) / 820));
-    const ease = 1 - Math.pow(1 - delayed, 3);
-    const scatter = phase === "settled" && !agent.winner ? 1 : 0;
-    const awayX = agent.originX + (agent.originX - centerX) * 0.08;
-    const awayY = agent.originY + (agent.originY - centerY) * 0.08;
+  run.cells.forEach((cell, index) => {
+    const column = index % layout.columns;
+    const row = Math.floor(index / layout.columns);
+    const x = left + column * (layout.size + layout.gap);
+    const y = top + row * (layout.size + layout.gap);
 
-    const targetX = agent.winner ? centerX : awayX;
-    const targetY = agent.winner ? centerY : awayY;
-    const activeTargetX = delayed < 0.75 ? centerX : targetX;
-    const activeTargetY = delayed < 0.75 ? centerY : targetY;
+    context.fillStyle = cellColor(cell.status);
+    context.fillRect(x, y, layout.size, layout.size);
 
-    agent.x = agent.originX + (activeTargetX - agent.originX) * ease + scatter * 0;
-    agent.y = agent.originY + (activeTargetY - agent.originY) * ease + scatter * 0;
+    if (cell.status !== null) {
+      const age = now - cell.at;
+      if (age < FLASH_MS) {
+        context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
+        context.lineWidth = 2;
+        context.strokeRect(x - 1, y - 1, layout.size + 2, layout.size + 2);
+      }
+    }
 
-    context.strokeStyle = agent.winner ? "rgba(216, 154, 43, 0.28)" : "rgba(120, 208, 199, 0.11)";
-    context.lineWidth = agent.winner ? 2 : 1;
+    if (index === run.winnerIndex) {
+      context.strokeStyle = colors.text;
+      context.lineWidth = 2;
+      context.strokeRect(x - 2, y - 2, layout.size + 4, layout.size + 4);
+    }
+  });
+}
+
+function drawTimeline(left, top, width, height) {
+  context.strokeStyle = colors.grid;
+  context.lineWidth = 1;
+  context.strokeRect(left, top, width, height);
+
+  context.fillStyle = colors.muted;
+  context.font = "600 11px Inter, system-ui, sans-serif";
+  context.fillText("responses over time", left + 6, top + 14);
+
+  if (run.timeline.length === 0) {
+    return;
+  }
+
+  const lastT = run.timeline[run.timeline.length - 1].t;
+  const spanMs = Math.max(lastT, 200);
+  context.strokeStyle = colors.text;
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(left, top + height);
+  for (const point of run.timeline) {
+    const x = left + (point.t / spanMs) * width;
+    const y = top + height - (point.n / run.count) * (height - 4);
+    context.lineTo(x, y);
+  }
+  context.stroke();
+
+  if (run.firstLockMs !== null) {
+    const x = left + (run.firstLockMs / spanMs) * width;
+    context.strokeStyle = colors.lock;
+    context.setLineDash([4, 3]);
     context.beginPath();
-    context.moveTo(agent.originX, agent.originY);
-    context.lineTo(agent.x, agent.y);
+    context.moveTo(x, top);
+    context.lineTo(x, top + height);
     context.stroke();
+    context.setLineDash([]);
+    context.fillStyle = colors.lock;
+    context.fillText("lock", Math.min(x + 4, left + width - 28), top + 28);
+  }
 
-    context.fillStyle = agent.winner ? colors.winner : delayed > 0.75 ? colors.conflict : colors.agent;
-    context.beginPath();
-    context.arc(agent.x, agent.y, agent.size, 0, Math.PI * 2);
-    context.fill();
+  context.fillStyle = colors.muted;
+  context.fillText(`${Math.round(spanMs)}ms`, left + width - 46, top + height - 4);
+}
+
+function drawLegend(width, height) {
+  const items = [
+    [colors.waiting, "waiting"],
+    [colors.lock, "201 lock"],
+    [colors.conflict, width < 520 ? "409 conflict" : "409 conflict + retry guidance"],
+    [colors.error, "error"]
+  ];
+  context.font = "600 12px Inter, system-ui, sans-serif";
+  let x = 24;
+  const y = height - 14;
+  for (const [color, text] of items) {
+    context.fillStyle = color;
+    context.fillRect(x, y - 9, 10, 10);
+    context.fillStyle = colors.muted;
+    context.fillText(text, x + 16, y);
+    x += 16 + context.measureText(text).width + 18;
+    if (x > width - 80) {
+      break;
+    }
   }
 }
 
@@ -198,46 +271,45 @@ function draw() {
   const rect = canvas.getBoundingClientRect();
   const width = rect.width;
   const height = rect.height;
-  const elapsed = startTime ? performance.now() - startTime : 0;
-  const progress = phase === "ready" ? 0.18 : Math.min(1, elapsed / 1300);
 
   context.clearRect(0, 0, width, height);
   context.fillStyle = colors.background;
   context.fillRect(0, 0, width, height);
-  drawGrid(width, height);
-  drawLock(width, height, progress);
-  drawAgents(progress);
-  drawLabels(width, height);
 
-  if (phase === "running" && progress < 1) {
-    animationFrame = requestAnimationFrame(draw);
+  if (!run) {
     return;
   }
 
-  if (phase === "running") {
-    phase = "settled";
-    runStatus.textContent = "Resolved";
-    draw();
+  const showTimeline = height >= 300;
+  const timelineHeight = showTimeline ? 70 : 0;
+  const gridTop = 76;
+  const gridBottom = height - 28 - (showTimeline ? timelineHeight + 12 : 0);
+
+  drawHeader(width);
+  drawCells(24, gridTop, width - 48, gridBottom);
+  if (showTimeline) {
+    drawTimeline(24, gridBottom + 12, width - 48, timelineHeight);
+  }
+  drawLegend(width, height);
+
+  const stillFlashing = run.lastArrival && performance.now() - run.lastArrival < FLASH_MS;
+  if (run.running || stillFlashing) {
+    requestFrame();
   }
 }
 
 function updateMetrics() {
   const count = Number(agentInput.value);
-  const estimatedLatency = Math.round(42 + Math.log2(count) * 12);
   agentOutput.value = count;
-  locksSecured.textContent = "1";
-  conflicts.textContent = String(Math.max(0, count - 1));
-  latency.textContent = `${estimatedLatency}ms`;
-  latencyLabel.textContent = "visual estimate";
+  locksSecured.textContent = "-";
+  conflicts.textContent = "-";
+  latency.textContent = "-";
+  latencyLabel.textContent = backendAvailable ? "press Run" : "API not running";
 }
 
 function reset() {
-  cancelAnimationFrame(animationFrame);
-  phase = "ready";
-  startTime = 0;
+  run = newRun(Number(agentInput.value), backendAvailable ? "api" : "visual");
   runStatus.textContent = "Ready";
-  lastRunSource = backendAvailable ? "api" : "visual";
-  agents = createAgents(Number(agentInput.value));
   updateMetrics();
   lastResponse.textContent = "Not run yet";
   draw();
@@ -253,7 +325,10 @@ async function checkBackend() {
   }
 
   apiMode.textContent = backendAvailable ? "Live API connected" : "Visual fallback";
-  lastRunSource = backendAvailable ? "api" : "visual";
+  if (run && !run.running && run.timeline.length === 0) {
+    run = newRun(run.count, backendAvailable ? "api" : "visual");
+    updateMetrics();
+  }
   draw();
 }
 
@@ -261,7 +336,6 @@ async function runLiveHandshake(count) {
   const selectedResource = resourceInput.value;
   const resourceLabel = resourceInput.options[resourceInput.selectedIndex].text;
   const runResourceId = `${selectedResource}-${Date.now()}`;
-  const startedAt = performance.now();
   const requests = Array.from({ length: count }, (_, index) => {
     const packet = {
       agent_id: `WEB-AGENT-${index + 1}`,
@@ -276,58 +350,74 @@ async function runLiveHandshake(count) {
       body: JSON.stringify(packet)
     })
       .then((response) => response.json())
-      .catch((error) => ({ status: 0, message: error.message }));
+      .then((body) => recordResponse(index, body.status))
+      .catch(() => recordResponse(index, 0));
   });
 
-  const responses = await Promise.all(requests);
-  const elapsedMs = Math.round(performance.now() - startedAt);
-  const lockCount = responses.filter((response) => response.status === 201).length;
-  const conflictCount = responses.filter((response) => response.status === 409).length;
-  const errorCount = responses.length - lockCount - conflictCount;
-
-  locksSecured.textContent = String(lockCount);
-  conflicts.textContent = String(conflictCount);
+  await Promise.all(requests);
+  const elapsedMs = Math.round(performance.now() - run.startedAt);
   latency.textContent = `${elapsedMs}ms`;
   latencyLabel.textContent = "live API round trip";
-  lastResponse.textContent = errorCount
-    ? `${errorCount} request errors`
-    : `${lockCount} locked, ${conflictCount} negotiated`;
+  lastResponse.textContent = run.errors
+    ? `${run.errors} request errors`
+    : `${run.locks} locked, ${run.conflictCount} negotiated`;
 }
 
-function runVisualFallback(count) {
-  const estimatedLatency = Math.round(42 + Math.log2(count) * 12);
-  locksSecured.textContent = "1";
-  conflicts.textContent = String(Math.max(0, count - 1));
-  latency.textContent = `${estimatedLatency}ms`;
-  latencyLabel.textContent = "visual estimate";
-  lastResponse.textContent = "API not running";
+// Offline demo only: outcomes are generated here and the view says SIMULATED.
+function runSimulated(count) {
+  const winner = Math.floor(Math.random() * count);
+  const order = Array.from({ length: count }, (_, i) => i).sort(() => Math.random() - 0.5);
+  order.unshift(order.splice(order.indexOf(winner), 1)[0]);
+  return new Promise((resolve) => {
+    order.forEach((index, position) => {
+      setTimeout(() => {
+        recordResponse(index, index === winner ? 201 : 409);
+        if (position === count - 1) {
+          resolve();
+        }
+      }, 30 + position * 4);
+    });
+  });
 }
 
 async function runSimulation() {
-  cancelAnimationFrame(animationFrame);
   await checkBackend();
-  phase = "running";
-  startTime = performance.now();
-  runStatus.textContent = "Running";
   const count = Number(agentInput.value);
-  agents = createAgents(count);
+  run = newRun(count, backendAvailable ? "api" : "visual");
+  run.startedAt = performance.now();
+  run.running = true;
+  runStatus.textContent = "Running";
   agentOutput.value = count;
-  lastRunSource = backendAvailable ? "api" : "visual";
+  locksSecured.textContent = "0";
+  conflicts.textContent = "0";
+  latency.textContent = "...";
+  latencyLabel.textContent = backendAvailable ? "waiting for responses" : "simulated";
   draw();
 
   if (backendAvailable) {
     try {
       await runLiveHandshake(count);
+      run.running = false;
       runStatus.textContent = "Resolved";
+      draw();
       return;
     } catch (error) {
       backendAvailable = false;
       apiMode.textContent = "Visual fallback";
-      lastRunSource = "visual";
+      run = newRun(count, "visual");
+      run.startedAt = performance.now();
+      run.running = true;
     }
   }
 
-  runVisualFallback(count);
+  await runSimulated(count);
+  run.running = false;
+  const elapsedMs = Math.round(performance.now() - run.startedAt);
+  latency.textContent = `${elapsedMs}ms`;
+  latencyLabel.textContent = "simulated, not measured";
+  lastResponse.textContent = "API not running";
+  runStatus.textContent = "Simulated";
+  draw();
 }
 
 agentInput.addEventListener("input", reset);
@@ -335,18 +425,6 @@ resourceInput.addEventListener("change", reset);
 runButton.addEventListener("click", runSimulation);
 resetButton.addEventListener("click", reset);
 window.addEventListener("resize", fitCanvas);
-
-if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function roundRect(x, y, width, height, radius) {
-    const r = Math.min(radius, width / 2, height / 2);
-    this.moveTo(x + r, y);
-    this.arcTo(x + width, y, x + width, y + height, r);
-    this.arcTo(x + width, y + height, x, y + height, r);
-    this.arcTo(x, y + height, x, y, r);
-    this.arcTo(x, y, x + width, y, r);
-    return this;
-  };
-}
 
 fitCanvas();
 reset();

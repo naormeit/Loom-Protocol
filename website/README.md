@@ -13,7 +13,7 @@ Start the Loom API before using the simulator as technical proof:
 python -m core.api.server
 ```
 
-The website checks `http://127.0.0.1:8080/health` by default. To point it at a hosted backend, open the page with `?api=https://<your-host>` (http/https origins only); the endpoint shown in the page updates to match. If the API is available, the Run button sends real `POST /v1/handshake` packets and displays actual `201` lock and `409` conflict counts. If the API is offline, the simulator labels itself as visual fallback mode.
+The website checks `http://127.0.0.1:8080/health` by default. To point it at a hosted backend, open the page with `?api=https://<your-host>` (http/https origins only); the endpoint shown in the page updates to match. If the API is available, the Run button sends real `POST /v1/handshake` packets and displays actual `201` lock and `409` conflict counts. Each agent is one cell in the grid and is coloured by the status code of its own real response as it arrives, with a chart of responses over time. If the API is offline, the simulator labels itself SIMULATED and its outcomes are generated locally, not measured.
 
 ## Current Direction
 

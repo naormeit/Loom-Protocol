@@ -27,7 +27,7 @@ Last updated: 2026-08-03
 - Interaction: `website/app.js`.
 - The site is static and can be opened directly in a browser.
 - First-screen experience: product positioning plus an interactive agent drop simulator.
-- Simulator contract: checks `http://127.0.0.1:8080/health`; when the Python API is running, it sends real `POST /v1/handshake` packets and displays actual lock/conflict counts; otherwise it must clearly label visual fallback mode.
+- Simulator contract: checks `http://127.0.0.1:8080/health`; when the Python API is running, it sends real `POST /v1/handshake` packets and displays actual lock/conflict counts; each agent's cell is coloured by its own real response; otherwise it must clearly label the view SIMULATED and never present generated outcomes as measured.
 
 ## Messaging Guardrails
 
