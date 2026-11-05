@@ -15,6 +15,10 @@ python -m core.api.server
 
 The website checks `http://127.0.0.1:8080/health` by default. To point it at a hosted backend, open the page with `?api=https://<your-host>` (http/https origins only); the endpoint shown in the page updates to match. If the API is available, the Run button sends real `POST /v1/handshake` packets and displays actual `201` lock and `409` conflict counts. Each agent is one cell in the grid and is coloured by the status code of its own real response as it arrives, with a chart of responses over time. If the API is offline, the simulator labels itself SIMULATED and its outcomes are generated locally, not measured.
 
+## Landing Intro
+
+`hero-intro.js` plays a short decorative intro: particles form a sphere, morph into the Loom logo (sampled from `assets/loom-logo.png`), then the page content fades in. It does not represent any request or protocol data. It plays once per browser session, is skipped for visitors who prefer reduced motion, and can be skipped with a click or any key. Use `?intro=1` to force it or `?intro=0` to disable it. Opened directly from `file://`, the logo cannot be sampled and the particles settle into a ring instead; serve the folder over HTTP for the full effect.
+
 ## Current Direction
 
 - Lead with the limited-inventory agent commerce wedge.

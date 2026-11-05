@@ -533,3 +533,38 @@ output {
     flex-direction: column;
   }
 }
+
+/* Landing-page intro (see hero-intro.js). Decorative only. */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.intro-overlay canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-skip {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-overlay {
+    display: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
