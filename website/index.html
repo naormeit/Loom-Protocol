@@ -6,7 +6,7 @@
     <title>Loom Protocol | Atomic reservations for AI agents</title>
     <meta
       name="description"
-      content="Loom Protocol is an atomic reservation layer for AI agents competing for scarce inventory, bookings, and transactional resources."
+      content="When many AI agents want the same scarce thing, Loom decides who gets it: one atomic lock, structured retry guidance for everyone else."
     >
     <link rel="icon" type="image/png" href="assets/loom-logo.png">
     <link rel="stylesheet" href="styles.css">
@@ -20,236 +20,212 @@
         <span>Loom Protocol</span>
       </a>
       <nav aria-label="Main navigation">
-        <a href="#demo">Demo</a>
-        <a href="#architecture">Architecture</a>
-        <a href="#competition">Imagine Cup</a>
-        <a href="#proof">Proof</a>
+        <a href="#problem">Problem</a>
+        <a href="#how">How it works</a>
+        <a href="#who">Who it's for</a>
+        <a href="#status">Status</a>
+        <a href="demo.html">Live demo</a>
       </nav>
     </header>
 
     <main id="top">
-      <section class="hero" aria-labelledby="hero-title">
+      <section class="hero landing-hero" aria-labelledby="hero-title">
         <div class="hero-copy">
-          <p class="eyebrow">Microsoft Imagine Cup 2027 project</p>
-          <h1 id="hero-title">Atomic reservations for AI agents competing over scarce resources.</h1>
-          <p class="lede">
-            Loom pre-clears agent intent, screens safety, verifies authority, and resolves
-            one-winner locks before agents hit vendor checkout.
+          <p class="eyebrow" data-reveal>Microsoft Imagine Cup 2027 project</p>
+          <h1 id="hero-title" data-reveal>When many AI agents want the same thing, Loom decides who gets it.</h1>
+          <p class="lede" data-reveal>
+            Loom is a pre-transaction coordination layer. Agents declare their intent first;
+            Loom checks it, grants exactly one atomic lock, and tells every other agent how
+            to retry. No duplicate holds, no retry storms.
           </p>
-          <div class="hero-actions" aria-label="Primary actions">
-            <a class="button primary" href="#demo">Run collision demo</a>
-            <a class="button secondary" href="#architecture">View architecture</a>
+          <div class="hero-actions" aria-label="Primary actions" data-reveal>
+            <a class="button primary" href="demo.html">Try the live demo</a>
+            <a
+              class="button secondary"
+              href="https://github.com/naormeit/Loom-Protocol/issues/new?title=My%20agents%20hit%20this%20problem%3A%20&amp;body=%23%23%20What%20happened%0A%0A%23%23%20How%20do%20you%20handle%20it%20today%3F%0A%0A%23%23%20What%20does%20it%20cost%20you%3F%0A%0A%28Optional%29%20your%20role%20and%20what%20you%20build%3A%20"
+              target="_blank"
+              rel="noopener"
+            >Tell us what breaks for you</a>
           </div>
-          <dl class="signal-strip" aria-label="Current product signals">
+          <dl class="signal-strip" aria-label="Current product signals" data-reveal>
             <div>
-              <dt>Use case</dt>
-              <dd>Limited-inventory commerce</dd>
+              <dt>Status</dt>
+              <dd>Local MVP</dd>
             </div>
             <div>
-              <dt>Endpoint</dt>
-              <dd>POST /v1/handshake</dd>
+              <dt>First use case</dt>
+              <dd>Limited inventory (a hypothesis)</dd>
             </div>
             <div>
               <dt>Stack</dt>
-              <dd>Local Python API; Azure path planned</dd>
+              <dd>Python API; Azure path in progress</dd>
             </div>
           </dl>
         </div>
 
-        <section class="sim-panel" id="demo" aria-labelledby="demo-title">
-          <div class="panel-head">
-            <div>
-              <p class="eyebrow">Live protocol demo</p>
-              <h2 id="demo-title">Agent drop simulator</h2>
-            </div>
-            <span class="status-pill" id="runStatus">Ready</span>
-          </div>
-
-          <div class="api-proof" aria-label="Backend connection status">
-            <div>
-              <span class="proof-label">Data source</span>
-              <strong id="apiMode">Checking API</strong>
-            </div>
-            <div>
-              <span class="proof-label">Gateway</span>
-              <strong id="apiEndpoint">127.0.0.1:8080</strong>
-            </div>
-            <div>
-              <span class="proof-label">Last response</span>
-              <strong id="lastResponse">Not run yet</strong>
-            </div>
-          </div>
-
-          <canvas id="agentCanvas" width="920" height="520" aria-label="Live grid of agent requests resolving against one locked resource, one cell per agent"></canvas>
-
-          <form class="controls" aria-label="Simulation controls">
-            <label>
-              Agents
-              <input id="agentCount" type="range" min="20" max="300" step="20" value="240">
-              <output id="agentOutput" for="agentCount">240</output>
-            </label>
-            <label>
-              Resource
-              <select id="resourceId">
-                <option value="DROP-SURFACE-001">Surface device drop</option>
-                <option value="DROP-TICKET-042">Concert ticket block</option>
-                <option value="DROP-GPU-009">GPU inventory release</option>
-              </select>
-            </label>
-            <button class="button primary" id="runSimulation" type="button">Run</button>
-            <button class="button secondary" id="resetSimulation" type="button">Reset</button>
-          </form>
-
-          <div class="metrics" aria-label="Simulation metrics">
-            <div>
-              <span class="metric-value" id="locksSecured">1</span>
-              <span class="metric-label">lock secured</span>
-            </div>
-            <div>
-              <span class="metric-value" id="conflicts">239</span>
-              <span class="metric-label">conflicts negotiated</span>
-            </div>
-            <div>
-              <span class="metric-value" id="latency">86ms</span>
-              <span class="metric-label" id="latencyLabel">resolution</span>
-            </div>
-          </div>
-        </section>
+        <figure class="illustration" data-reveal>
+          <svg viewBox="0 0 650 330" role="img" aria-labelledby="ill-title ill-desc">
+            <title id="ill-title">Many agents send requests to Loom; one gets a lock and the rest are told to retry</title>
+            <desc id="ill-desc">An illustration, not live data. Seven agents on the left send requests into Loom in the middle. On the right, one agent receives a 201 lock and six receive a 409 with retry guidance.</desc>
+            <g class="ill-agents">
+              <rect style="--i:0" x="30" y="24" width="26" height="26" rx="4" />
+              <rect style="--i:1" x="30" y="64" width="26" height="26" rx="4" />
+              <rect style="--i:2" x="30" y="104" width="26" height="26" rx="4" />
+              <rect style="--i:3" x="30" y="144" width="26" height="26" rx="4" />
+              <rect style="--i:4" x="30" y="184" width="26" height="26" rx="4" />
+              <rect style="--i:5" x="30" y="224" width="26" height="26" rx="4" />
+              <rect style="--i:6" x="30" y="264" width="26" height="26" rx="4" />
+            </g>
+            <g class="ill-flow">
+              <path d="M60 37 C170 37 190 165 235 165" />
+              <path d="M60 77 C170 77 190 165 235 165" />
+              <path d="M60 117 C170 117 190 165 235 165" />
+              <path d="M60 157 L235 165" />
+              <path d="M60 197 L235 165" />
+              <path d="M60 237 C170 237 190 165 235 165" />
+              <path d="M60 277 C170 277 190 165 235 165" />
+            </g>
+            <rect class="ill-loom" x="235" y="115" width="90" height="100" rx="10" />
+            <text class="ill-loom-text" x="280" y="160" text-anchor="middle">Loom</text>
+            <text class="ill-loom-sub" x="280" y="180" text-anchor="middle">one atomic lock</text>
+            <g class="ill-out">
+              <path d="M325 165 C400 165 410 52 480 52" class="ill-out-win" />
+              <path d="M325 165 C400 165 410 100 480 100" />
+              <path d="M325 165 C400 165 410 140 480 140" />
+              <path d="M325 165 L480 180" />
+              <path d="M325 165 C400 165 410 222 480 222" />
+              <path d="M325 165 C400 165 410 262 480 262" />
+              <path d="M325 165 C400 165 410 300 480 300" />
+            </g>
+            <rect class="ill-win" x="480" y="39" width="26" height="26" rx="4" />
+            <g class="ill-lose">
+              <rect style="--i:0" x="480" y="87" width="26" height="26" rx="4" />
+              <rect style="--i:1" x="480" y="127" width="26" height="26" rx="4" />
+              <rect style="--i:2" x="480" y="167" width="26" height="26" rx="4" />
+              <rect style="--i:3" x="480" y="209" width="26" height="26" rx="4" />
+              <rect style="--i:4" x="480" y="249" width="26" height="26" rx="4" />
+              <rect style="--i:5" x="480" y="287" width="26" height="26" rx="4" />
+            </g>
+            <text class="ill-label" x="514" y="56">201 lock</text>
+            <text class="ill-label ill-label-lose" x="514" y="190">409 + retry guidance</text>
+          </svg>
+          <figcaption>Illustration, not live data. See real responses in the <a href="demo.html">live demo</a>.</figcaption>
+        </figure>
       </section>
 
-      <section class="problem-band" aria-labelledby="problem-title">
+      <section class="problem-band" id="problem" aria-labelledby="problem-title">
         <div class="section-inner two-column">
           <div>
-            <p class="eyebrow">The failure mode</p>
-            <h2 id="problem-title">Agent commerce breaks when every bot reaches checkout at once.</h2>
+            <p class="eyebrow">The problem we think is coming</p>
+            <h2 id="problem-title">Autonomous agents will race for the same scarce thing.</h2>
           </div>
           <div class="copy-stack">
             <p>
-              Direct vendor APIs were not designed for thousands of autonomous shoppers
-              reserving one scarce item at the same time. The result is duplicate holds,
-              retry storms, ambiguous partial state, and no machine-readable path for
-              the losing agents.
+              Tickets, limited drops, booking slots, GPU capacity: when many agents spot the
+              same opportunity at once, the vendor sees a burst of near-identical requests.
+              That can mean duplicate holds, retry storms, and agents that lose without any
+              machine-readable way to try again.
             </p>
             <p>
-              Loom moves the concurrency decision upstream. Agents submit intent first.
-              The protocol returns either a confirmed lock or a structured negotiation
-              payload for safe retry.
+              This is still a hypothesis. We are talking to people who build and run agents
+              to find out where it really hurts, and we will change course if it does not.
             </p>
           </div>
         </div>
       </section>
 
-      <section class="section-inner" aria-labelledby="status-title">
+      <section class="section-inner" id="how" aria-labelledby="how-title">
         <div class="section-heading">
-          <p class="eyebrow">Implementation status</p>
-          <h2 id="status-title">Clear proof boundaries for review.</h2>
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Declare intent. One lock. Clear answers.</h2>
         </div>
-        <div class="status-grid">
-          <article>
-            <span>Implemented locally</span>
-            <h3>ATP gateway and lock kernel</h3>
-            <p>Run `python -m core.api.server` to power the website demo with real `/v1/handshake` responses.</p>
-          </article>
-          <article>
-            <span>Verified in repo</span>
-            <h3>Tests and collision behavior</h3>
-            <p>Unit tests cover API responses, safety rejection, signing, replay protection, SDK calls, and one-winner locking.</p>
-          </article>
-          <article>
-            <span>Production path</span>
-            <h3>Azure services target</h3>
-            <p>Azure OpenAI, Content Safety, Cosmos DB, and Entra ID remain the deployment path until live resources are validated.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section-inner" id="architecture" aria-labelledby="architecture-title">
-        <div class="section-heading">
-          <p class="eyebrow">Protocol path</p>
-          <h2 id="architecture-title">One request, five gates, one clear result.</h2>
-        </div>
-        <ol class="flow-list">
+        <ol class="steps">
           <li>
             <span>01</span>
-            <strong>Intent packet</strong>
-            <p>Agent submits `agent_id`, `intent`, `intent_hash`, and lock expiry.</p>
+            <strong>Agents declare intent</strong>
+            <p>Each agent sends a packet, optionally signed: who it is, what it wants, which resource, and how long to hold it.</p>
           </li>
           <li>
             <span>02</span>
-            <strong>Authority</strong>
-            <p>Signature mode verifies packet authenticity and rejects replay attempts.</p>
+            <strong>Loom checks, then decides</strong>
+            <p>It validates the packet, verifies authority, screens the intent, and attempts one atomic lock on the resource.</p>
           </li>
           <li>
             <span>03</span>
-            <strong>Microsoft AI</strong>
-            <p>Intent parsing and content safety prepare the packet for transaction logic.</p>
-          </li>
-          <li>
-            <span>04</span>
-            <strong>Atomic ledger</strong>
-            <p>Local mode proves one-winner behavior. Azure mode targets Cosmos DB locks.</p>
-          </li>
-          <li>
-            <span>05</span>
-            <strong>Negotiation</strong>
-            <p>Losing agents receive `409` plus an alternative resource and retry backoff.</p>
+            <strong>One winner, clear answers</strong>
+            <p>One agent gets a <code>201</code> lock. Every other agent gets a <code>409</code> with a retry suggestion it can act on in code.</p>
           </li>
         </ol>
+        <p class="section-link"><a href="demo.html">Watch it happen with real requests &rarr;</a></p>
       </section>
 
-      <section class="section-inner split-proof" id="competition" aria-labelledby="competition-title">
-        <div>
-          <p class="eyebrow">Judge-ready direction</p>
-          <h2 id="competition-title">Built around a demo a strict reviewer can understand in two minutes.</h2>
-          <p>
-            The first submission story is deliberately narrow: limited-inventory drops
-            where agent buyers must be coordinated before checkout. That wedge makes
-            concurrency, safety, identity, Microsoft AI usage, and measurable proof visible.
-          </p>
+      <section class="section-inner who" id="who" aria-labelledby="who-title">
+        <div class="section-heading">
+          <p class="eyebrow">Who it might be for</p>
+          <h2 id="who-title">Anyone where one slot can only go to one party.</h2>
         </div>
-        <div class="score-grid" aria-label="Competition focus areas">
-          <div>
-            <strong>Technical proof</strong>
-            <span>Tests, stress demo, API contract, SDK</span>
-          </div>
-          <div>
-            <strong>Microsoft path</strong>
-            <span>Local proof now; Azure OpenAI, Content Safety, Cosmos DB, and Entra ID as the production path</span>
-          </div>
-          <div>
-            <strong>Business wedge</strong>
-            <span>Marketplace operators and agent-commerce platforms</span>
-          </div>
-          <div>
-            <strong>Validation</strong>
-            <span>Founder-led interviews, pilot targets, evidence log</span>
-          </div>
+        <div class="status-grid">
+          <article>
+            <span>Agent builders</span>
+            <h3>Agents that buy, book or claim</h3>
+            <p>Teams whose agents act for people and need to avoid stepping on each other.</p>
+          </article>
+          <article>
+            <span>Platforms</span>
+            <h3>Marketplaces and commerce</h3>
+            <p>Operators who expect agent traffic around scarce inventory and limited drops.</p>
+          </article>
+          <article>
+            <span>Capacity</span>
+            <h3>Booking, ticketing, compute</h3>
+            <p>Systems where a seat, a slot or a GPU can be held by only one requester at a time.</p>
+          </article>
+        </div>
+        <p class="section-link">
+          <a
+            href="https://github.com/naormeit/Loom-Protocol/issues/new?title=My%20agents%20hit%20this%20problem%3A%20"
+            target="_blank"
+            rel="noopener"
+          >If this sounds like you, tell us what breaks &rarr;</a>
+        </p>
+      </section>
+
+      <section class="section-inner" id="status" aria-labelledby="status-title">
+        <div class="section-heading">
+          <p class="eyebrow">Where it stands</p>
+          <h2 id="status-title">Honest status.</h2>
+        </div>
+        <div class="status-grid">
+          <article>
+            <span>Working today</span>
+            <h3>Local MVP</h3>
+            <p>A local gateway and lock kernel, a Python SDK, packet signing with replay protection, and a live demo with real responses. The test suite passes.</p>
+          </article>
+          <article>
+            <span>In progress</span>
+            <h3>Running on Azure</h3>
+            <p>The same flow on Azure OpenAI, Content Safety and Cosmos DB with live evidence. Hosted so far in local mode only.</p>
+          </article>
+          <article>
+            <span>Not yet</span>
+            <h3>Validation and hardening</h3>
+            <p>Customer validation, pricing, public-key signatures and an audit trail. Safety screening is a keyword check locally, not real screening.</p>
+          </article>
         </div>
       </section>
 
-      <section class="proof-band" id="proof" aria-labelledby="proof-title">
-        <div class="section-inner">
-          <div class="section-heading">
-            <p class="eyebrow">Current proof</p>
-            <h2 id="proof-title">What the repository can show today.</h2>
-          </div>
-          <div class="proof-grid">
-            <article>
-              <h3>Local ATP kernel</h3>
-              <p>Packet validation, authority checks, safety screening, and stable response contracts.</p>
-            </article>
-            <article>
-              <h3>One-winner locking</h3>
-              <p>Thread-safe local ledger and collision tests demonstrate deterministic contention behavior.</p>
-            </article>
-            <article>
-              <h3>API gateway</h3>
-              <p>`POST /v1/handshake` returns `201`, `409`, `403`, `401`, or `400` for agent workflows.</p>
-            </article>
-            <article>
-              <h3>Python SDK</h3>
-              <p>Agent integrations can reserve scarce resources through a simple client call.</p>
-            </article>
+      <section class="proof-band" aria-labelledby="cta-title">
+        <div class="section-inner cta">
+          <h2 id="cta-title">See it run, then tell us what breaks.</h2>
+          <div class="hero-actions" aria-label="Next steps">
+            <a class="button primary" href="demo.html">Try the live demo</a>
+            <a
+              class="button secondary"
+              href="https://github.com/naormeit/Loom-Protocol/issues/new?title=My%20agents%20hit%20this%20problem%3A%20"
+              target="_blank"
+              rel="noopener"
+            >Tell us what breaks</a>
+            <a class="button secondary" href="https://github.com/naormeit/Loom-Protocol" target="_blank" rel="noopener">View the code</a>
           </div>
         </div>
       </section>
@@ -257,9 +233,10 @@
 
     <footer class="footer">
       <span>Loom Protocol</span>
-      <span>Atomic reservation middleware for agentic transactions.</span>
+      <span><a href="demo.html">Live demo</a> · Atomic reservation middleware for agentic transactions.</span>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="landing.js"></script>
+    <script src="hero-intro.js"></script>
   </body>
 </html>

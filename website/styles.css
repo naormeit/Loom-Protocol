@@ -533,3 +533,383 @@ output {
     flex-direction: column;
   }
 }
+
+/* Landing-page intro (see hero-intro.js). Decorative only. */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: var(--paper);
+  cursor: pointer;
+}
+
+.intro-overlay canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.intro-skip {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-overlay {
+    display: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Landing page (index.html). The simulator lives in demo.html. */
+.landing-hero {
+  min-height: calc(88vh - 64px);
+}
+
+.illustration {
+  margin: 0;
+  padding: clamp(14px, 2.2vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.illustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.illustration figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.illustration figcaption a,
+.section-link a,
+.footer a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ill-agents rect {
+  fill: var(--teal);
+}
+
+.ill-flow path,
+.ill-out path {
+  fill: none;
+  stroke: rgba(11, 118, 111, 0.35);
+  stroke-width: 1.5;
+}
+
+.ill-out path {
+  stroke: rgba(200, 79, 56, 0.4);
+}
+
+.ill-out .ill-out-win {
+  stroke: var(--amber);
+  stroke-width: 2.5;
+}
+
+.ill-loom {
+  fill: var(--ink);
+}
+
+.ill-loom-text {
+  fill: var(--surface);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.ill-loom-sub {
+  fill: rgba(255, 250, 242, 0.7);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ill-win {
+  fill: var(--amber);
+}
+
+.ill-lose rect {
+  fill: var(--coral);
+}
+
+.ill-label {
+  fill: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ill-label-lose {
+  fill: var(--coral);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  list-style: none;
+}
+
+.steps li {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 22px;
+  background: var(--surface);
+}
+
+.steps span {
+  color: var(--coral);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.steps strong {
+  font-size: 1.2rem;
+}
+
+.steps p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.section-link {
+  margin: 22px 0 0;
+  font-weight: 800;
+}
+
+.who .status-grid article {
+  min-height: 150px;
+}
+
+.cta {
+  display: grid;
+  gap: 8px;
+}
+
+.cta h2 {
+  max-width: 18ch;
+}
+
+code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(23, 33, 31, 0.08);
+  font-size: 0.92em;
+}
+
+.problem-band code,
+.proof-band code {
+  background: rgba(255, 250, 242, 0.14);
+}
+
+@media (max-width: 980px) {
+  .landing-hero {
+    min-height: auto;
+  }
+
+  .steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Landing-page animation (see landing.js). Decorative only. */
+.js-anim [data-scroll] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms);
+}
+
+.js-anim [data-scroll].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Looping illustration: agents send, Loom pulses, one gets the lock, the rest retry. */
+.illustration svg rect,
+.illustration svg text {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ill-flow path {
+  stroke: var(--teal);
+  stroke-dasharray: 5 7;
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-in 5s ease-in-out infinite;
+}
+
+.ill-out path {
+  stroke: var(--coral);
+  stroke-dasharray: 5 7;
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-out 5s ease-in-out infinite;
+}
+
+.ill-out .ill-out-win {
+  stroke: var(--amber);
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-out-win 5s ease-in-out infinite;
+}
+
+.ill-agents rect {
+  animation: ill-send 5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.08s);
+}
+
+.ill-loom {
+  animation: ill-core 5s ease-in-out infinite;
+}
+
+.ill-win {
+  animation: ill-win 5s ease-in-out infinite;
+}
+
+.ill-lose rect {
+  animation: ill-lose 5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.07s);
+}
+
+.ill-label {
+  animation: ill-label 5s ease-in-out infinite;
+}
+
+@keyframes ill-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes ill-send {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  10% { opacity: 1; transform: scale(1.18); }
+  30% { opacity: 0.65; transform: scale(1); }
+}
+
+@keyframes ill-flow-in {
+  0%, 100% { stroke-opacity: 0.12; }
+  8%, 30% { stroke-opacity: 0.9; }
+  45% { stroke-opacity: 0.12; }
+}
+
+@keyframes ill-core {
+  0%, 30%, 100% { transform: scale(1); }
+  38% { transform: scale(1.07); }
+  46% { transform: scale(1); }
+}
+
+@keyframes ill-flow-out {
+  0%, 38%, 100% { stroke-opacity: 0.1; }
+  48%, 68% { stroke-opacity: 0.85; }
+  85% { stroke-opacity: 0.2; }
+}
+
+@keyframes ill-flow-out-win {
+  0%, 36%, 100% { stroke-opacity: 0.1; }
+  44%, 62% { stroke-opacity: 1; }
+  80% { stroke-opacity: 0.35; }
+}
+
+@keyframes ill-win {
+  0%, 40% { opacity: 0.25; transform: scale(0.85); }
+  48% { opacity: 1; transform: scale(1.35); }
+  60%, 90% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.25; transform: scale(0.85); }
+}
+
+@keyframes ill-lose {
+  0%, 48% { opacity: 0.2; }
+  58%, 90% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+@keyframes ill-label {
+  0%, 44% { opacity: 0; }
+  56%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Hover and focus states. */
+.button {
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 33, 31, 0.14);
+}
+
+.button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.steps li,
+.status-grid article {
+  transition: background-color 0.25s ease;
+}
+
+.steps li:hover,
+.status-grid article:hover {
+  background: #ffffff;
+}
+
+a:focus-visible,
+.button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-anim [data-scroll] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .illustration svg *,
+  .button {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .ill-flow path,
+  .ill-out path {
+    stroke-dasharray: none;
+  }
+
+  .button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}

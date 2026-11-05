@@ -49,6 +49,30 @@ const colors = {
 };
 
 const FLASH_MS = 450;
+// Run motion (decorative), 3 seconds in total:
+//   0.00-0.40s  a black hole forms at the centre of the grid area
+//   0.35-2.35s  it releases the cubes, each spiralling out into its own block
+//   2.00-2.70s  the black hole collapses
+//   2.40-3.00s  the winner pulses and the result line appears
+const MOTION_TOTAL_MS = 3000;
+const HOLE_GROW_MS = 400;
+const HOLE_FADE_START_MS = 2000;
+const HOLE_FADE_MS = 700;
+const RELEASE_START_MS = 350;
+const RELEASE_SPREAD_MS = 600;
+const RELEASE_MS = 1400;
+const SWIRL_RADIANS = Math.PI * 1.5; // how far each cube orbits before it lands
+const RESULT_AT_MS = 2400;
+const POP_MS = 260; // size pop when a response arrives
+const RING_MS = 600; // pulse ring around the winning agent
+const reduceMotion =
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const lerp = (from, to, amount) => from + (to - from) * amount;
+const easeOutCubic = (amount) => 1 - Math.pow(1 - amount, 3);
+const easeInCubic = (amount) => amount * amount * amount;
 
 // One run = one cell per agent. In live mode each cell is filled when that
 // agent's real HTTP response arrives; nothing is decided ahead of time.
@@ -65,6 +89,7 @@ function newRun(count, source) {
     startedAt: 0,
     running: false,
     firstLockMs: null,
+    lockAt: 0,
     winnerIndex: -1,
     lastArrival: 0,
     locks: 0,
@@ -97,6 +122,7 @@ function recordResponse(index, status) {
   if (status === 201) {
     run.locks += 1;
     if (run.firstLockMs === null) {
+      run.lockAt = now;
       run.firstLockMs = now - run.startedAt;
       run.winnerIndex = index;
     }
@@ -157,10 +183,12 @@ function drawHeader(width) {
   context.fillStyle = colors.muted;
   context.font = "600 13px Inter, system-ui, sans-serif";
   const responded = run.timeline.length;
+  const resultVisible =
+    reduceMotion || !run.startedAt || performance.now() - run.startedAt >= RESULT_AT_MS;
   let line;
   if (run.simulated) {
     line = "SIMULATED - API not running. Start it with: python -m core.api.server";
-  } else if (run.running) {
+  } else if (run.running || (responded > 0 && !resultVisible)) {
     line = `Live API: ${responded} of ${run.count} agents have a response`;
   } else if (responded === 0) {
     line = `Live API connected - press Run to send ${run.count} real requests`;
@@ -172,34 +200,138 @@ function drawHeader(width) {
   context.fillText(line, 24, 58, width - 48);
 }
 
+function drawBlackHole(centerX, centerY, elapsed, extent) {
+  const grow = easeOutCubic(clamp01(elapsed / HOLE_GROW_MS));
+  const fade = 1 - easeInCubic(clamp01((elapsed - HOLE_FADE_START_MS) / HOLE_FADE_MS));
+  const scale = grow * fade;
+  if (scale <= 0.01) {
+    return;
+  }
+
+  const radius = Math.min(extent * 0.16, 56) * scale;
+
+  // Soft glow around the hole.
+  const glow = context.createRadialGradient(centerX, centerY, radius * 0.4, centerX, centerY, radius * 3);
+  glow.addColorStop(0, `rgba(122, 108, 255, ${0.55 * scale})`);
+  glow.addColorStop(0.5, `rgba(31, 75, 255, ${0.2 * scale})`);
+  glow.addColorStop(1, "rgba(31, 75, 255, 0)");
+  context.fillStyle = glow;
+  context.beginPath();
+  context.arc(centerX, centerY, radius * 3, 0, Math.PI * 2);
+  context.fill();
+
+  // Swirling accretion rings.
+  const rings = [
+    ["rgba(169, 146, 240, 0.85)", 1.35, 0.0052],
+    ["rgba(31, 75, 255, 0.8)", 1.7, -0.0038],
+    ["rgba(166, 230, 0, 0.7)", 2.05, 0.0029]
+  ];
+  rings.forEach(([color, factor, speed], index) => {
+    context.save();
+    context.translate(centerX, centerY);
+    context.rotate(elapsed * speed + index);
+    context.scale(1, 0.38);
+    context.strokeStyle = color;
+    context.lineWidth = 2.5 * scale + 0.5;
+    context.beginPath();
+    context.arc(0, 0, radius * factor, 0, Math.PI * 1.35);
+    context.stroke();
+    context.restore();
+  });
+
+  // The black core with a thin bright rim.
+  context.fillStyle = "#000000";
+  context.beginPath();
+  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  context.fill();
+  context.strokeStyle = `rgba(255, 250, 242, ${0.7 * scale})`;
+  context.lineWidth = 1.5;
+  context.stroke();
+}
+
 function drawCells(left, top, width, bottom) {
   const layout = gridLayout(width, top, bottom, run.count);
   const now = performance.now();
+  const elapsed = run.startedAt ? now - run.startedAt : 0;
+  const centerX = left + width / 2;
+  const centerY = top + (bottom - top) / 2;
+  const moving = !reduceMotion && run.startedAt > 0 && elapsed < MOTION_TOTAL_MS;
+  let winnerCenter = null;
+  let winnerSize = layout.size;
+
+  if (moving) {
+    drawBlackHole(centerX, centerY, elapsed, Math.min(width, bottom - top));
+  }
 
   run.cells.forEach((cell, index) => {
     const column = index % layout.columns;
     const row = Math.floor(index / layout.columns);
-    const x = left + column * (layout.size + layout.gap);
-    const y = top + row * (layout.size + layout.gap);
+    const homeX = left + column * (layout.size + layout.gap) + layout.size / 2;
+    const homeY = top + row * (layout.size + layout.gap) + layout.size / 2;
 
-    context.fillStyle = cellColor(cell.status);
-    context.fillRect(x, y, layout.size, layout.size);
+    // Motion only: the black hole releases each cube along a spiral into its
+    // block. Position never encodes the result; colour always comes from the
+    // real response.
+    let x = homeX;
+    let y = homeY;
+    let size = layout.size;
+    if (moving) {
+      const spread = ((index * 37) % 100) / 100;
+      const progress = clamp01((elapsed - RELEASE_START_MS - spread * RELEASE_SPREAD_MS) / RELEASE_MS);
+      const travelled = easeOutCubic(progress);
+      const offsetX = homeX - centerX;
+      const offsetY = homeY - centerY;
+      const distance = Math.hypot(offsetX, offsetY);
+      const angle = Math.atan2(offsetY, offsetX) + (1 - travelled) * SWIRL_RADIANS;
+      x = centerX + Math.cos(angle) * distance * travelled;
+      y = centerY + Math.sin(angle) * distance * travelled;
+      size = layout.size * easeOutCubic(clamp01(progress * 1.8));
+    }
 
-    if (cell.status !== null) {
-      const age = now - cell.at;
-      if (age < FLASH_MS) {
+    const age = now - cell.at;
+    if (cell.status !== null && !reduceMotion && age < POP_MS) {
+      const pop = 1 - age / POP_MS;
+      size *= 1 + 0.6 * pop * pop;
+    }
+
+    if (size > 0.2) {
+      context.fillStyle = cellColor(cell.status);
+      context.fillRect(x - size / 2, y - size / 2, size, size);
+
+      if (cell.status !== null && age < FLASH_MS) {
         context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
         context.lineWidth = 2;
-        context.strokeRect(x - 1, y - 1, layout.size + 2, layout.size + 2);
+        context.strokeRect(x - size / 2 - 1, y - size / 2 - 1, size + 2, size + 2);
       }
     }
 
     if (index === run.winnerIndex) {
-      context.strokeStyle = colors.text;
-      context.lineWidth = 2;
-      context.strokeRect(x - 2, y - 2, layout.size + 4, layout.size + 4);
+      winnerCenter = [x, y];
+      winnerSize = Math.max(size, 4);
+      if (size > 0.2) {
+        context.strokeStyle = colors.text;
+        context.lineWidth = 2;
+        context.strokeRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
+      }
     }
   });
+
+  if (winnerCenter && run.startedAt && !reduceMotion) {
+    const ringProgress = (elapsed - RESULT_AT_MS) / RING_MS;
+    if (ringProgress >= 0 && ringProgress < 1) {
+      context.strokeStyle = `rgba(216, 154, 43, ${0.85 * (1 - ringProgress)})`;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(
+        winnerCenter[0],
+        winnerCenter[1],
+        winnerSize + easeOutCubic(ringProgress) * Math.min(width, bottom - top) * 0.3,
+        0,
+        Math.PI * 2
+      );
+      context.stroke();
+    }
+  }
 }
 
 function drawTimeline(left, top, width, height) {
@@ -292,8 +424,10 @@ function draw() {
   }
   drawLegend(width, height);
 
-  const stillFlashing = run.lastArrival && performance.now() - run.lastArrival < FLASH_MS;
-  if (run.running || stillFlashing) {
+  const now = performance.now();
+  const settling = run.lastArrival && now - run.lastArrival < Math.max(FLASH_MS, POP_MS);
+  const moving = !reduceMotion && run.startedAt && now - run.startedAt < MOTION_TOTAL_MS + 50;
+  if (run.running || settling || moving) {
     requestFrame();
   }
 }
