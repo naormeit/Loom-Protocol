@@ -11,6 +11,12 @@
   const LOGO_URL = "assets/loom-logo.png";
   // Total before the fade: 3400ms; with the 400ms fade the intro lasts about 3.8s.
   const TIMING = { gather: 900, sphere: 900, morph: 1100, hold: 500, fade: 400 };
+  // Sphere palette: electric blue, soft lavender, acid green (RGB).
+  const PALETTE = {
+    blue: [31, 75, 255],
+    lavender: [150, 122, 236],
+    green: [166, 230, 0]
+  };
   const SPREAD = 250; // per-particle start offset in ms, for an organic feel
   const FAILSAFE_MS = 7000;
 
@@ -89,7 +95,7 @@
     const y = 1 - (i / (COUNT - 1)) * 2;
     const radius = Math.sqrt(1 - y * y);
     const theta = golden * i;
-    const amber = Math.random() < 0.12;
+    const pick = Math.random();
     return {
       ux: Math.cos(theta) * radius,
       uy: y,
@@ -97,7 +103,7 @@
       sx: Math.random() * width,
       sy: Math.random() * height,
       delay: Math.random() * SPREAD,
-      base: amber ? [216, 154, 43] : [11, 118, 111],
+      base: pick < 0.5 ? PALETTE.blue : pick < 0.8 ? PALETTE.lavender : PALETTE.green,
       target: null,
       color: null
     };
