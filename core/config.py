@@ -20,6 +20,11 @@ class AppConfig:
     cosmos_key: str = ""
     cosmos_database: str = "loom"
     cosmos_container: str = "locks"
+    audit_log_path: str = ""
+    rate_limit_agent_max: int = 30
+    rate_limit_agent_window_seconds: float = 10.0
+    rate_limit_ip_max: int = 0
+    rate_limit_ip_window_seconds: float = 10.0
 
     @classmethod
     def from_env(cls) -> "AppConfig":
@@ -46,4 +51,13 @@ class AppConfig:
             cosmos_key=os.getenv("COSMOS_KEY", ""),
             cosmos_database=os.getenv("COSMOS_DATABASE", "loom"),
             cosmos_container=os.getenv("COSMOS_CONTAINER", "locks"),
+            audit_log_path=os.getenv("LOOM_AUDIT_LOG", "").strip(),
+            rate_limit_agent_max=int(os.getenv("LOOM_RATE_LIMIT_AGENT_MAX", "30")),
+            rate_limit_agent_window_seconds=float(
+                os.getenv("LOOM_RATE_LIMIT_AGENT_WINDOW", "10")
+            ),
+            rate_limit_ip_max=int(os.getenv("LOOM_RATE_LIMIT_IP_MAX", "0")),
+            rate_limit_ip_window_seconds=float(
+                os.getenv("LOOM_RATE_LIMIT_IP_WINDOW", "10")
+            ),
         )
