@@ -49,8 +49,21 @@ const colors = {
 };
 
 const FLASH_MS = 450;
-const FLIGHT_DELAY_MS = 450; // max stagger before a cell leaves the sphere
-const FLIGHT_MS = 700; // time for a cell to glide from the sphere to its slot
+// Run motion (decorative), 5 seconds in total:
+//   0.0-0.3s  every agent is one point at the centre
+//   0.3-1.7s  the points stream out into a horizontal line
+//   1.7-2.7s  the line holds
+//   2.7-4.2s  the line unfolds into the grid of results
+//   4.2-5.0s  the grid settles, the winner pulses, and the result line appears
+const MOTION_TOTAL_MS = 5000;
+const POINT_HOLD_MS = 300;
+const LINE_EMIT_MS = 1100;
+const LINE_EMIT_SPREAD_MS = 300;
+const LINE_HOLD_END_MS = 2700;
+const UNFOLD_MS = 1100;
+const UNFOLD_SPREAD_MS = 400;
+const RESULT_AT_MS = 4200;
+const LINE_POINT_SIZE = 3;
 const POP_MS = 260; // size pop when a response arrives
 const RING_MS = 800; // pulse ring around the winning agent
 const reduceMotion =
@@ -60,7 +73,8 @@ const reduceMotion =
 const clamp01 = (value) => Math.max(0, Math.min(1, value));
 const lerp = (from, to, amount) => from + (to - from) * amount;
 const easeOutCubic = (amount) => 1 - Math.pow(1 - amount, 3);
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+const easeInOutCubic = (amount) =>
+  amount < 0.5 ? 4 * amount * amount * amount : 1 - Math.pow(-2 * amount + 2, 3) / 2;
 
 // One run = one cell per agent. In live mode each cell is filled when that
 // agent's real HTTP response arrives; nothing is decided ahead of time.
@@ -171,10 +185,12 @@ function drawHeader(width) {
   context.fillStyle = colors.muted;
   context.font = "600 13px Inter, system-ui, sans-serif";
   const responded = run.timeline.length;
+  const resultVisible =
+    reduceMotion || !run.startedAt || performance.now() - run.startedAt >= RESULT_AT_MS;
   let line;
   if (run.simulated) {
     line = "SIMULATED - API not running. Start it with: python -m core.api.server";
-  } else if (run.running) {
+  } else if (run.running || (responded > 0 && !resultVisible)) {
     line = `Live API: ${responded} of ${run.count} agents have a response`;
   } else if (responded === 0) {
     line = `Live API connected - press Run to send ${run.count} real requests`;
@@ -192,10 +208,18 @@ function drawCells(left, top, width, bottom) {
   const elapsed = run.startedAt ? now - run.startedAt : 0;
   const centerX = left + width / 2;
   const centerY = top + (bottom - top) / 2;
-  const sphereRadius = Math.min(width, bottom - top) * 0.45;
-  const sphereAngle = elapsed * 0.0018;
-  const flying = !reduceMotion && run.startedAt > 0;
+  const moving = !reduceMotion && run.startedAt > 0 && elapsed < MOTION_TOTAL_MS;
   let winnerCenter = null;
+  let winnerSize = layout.size;
+
+  if (moving && elapsed < LINE_EMIT_MS) {
+    // The single point everything starts from.
+    const glow = 1 - clamp01(elapsed / LINE_EMIT_MS);
+    context.fillStyle = `rgba(255, 250, 242, ${0.9 * glow})`;
+    context.beginPath();
+    context.arc(centerX, centerY, 3 + 5 * glow, 0, Math.PI * 2);
+    context.fill();
+  }
 
   run.cells.forEach((cell, index) => {
     const column = index % layout.columns;
@@ -203,27 +227,30 @@ function drawCells(left, top, width, bottom) {
     const homeX = left + column * (layout.size + layout.gap) + layout.size / 2;
     const homeY = top + row * (layout.size + layout.gap) + layout.size / 2;
 
-    // Motion only: cells start on a rotating sphere and glide to their slot.
-    // Position never encodes the result; colour always comes from the response.
+    // Motion only: point -> horizontal line -> grid. Position never encodes the
+    // result; colour always comes from the real response.
     let x = homeX;
     let y = homeY;
-    if (flying) {
-      const delay = ((index * 37) % 100) / 100 * FLIGHT_DELAY_MS;
-      const progress = easeOutCubic(clamp01((elapsed - delay) / FLIGHT_MS));
-      if (progress < 1) {
-        const unitY = 1 - (index / Math.max(1, run.count - 1)) * 2;
-        const ringRadius = Math.sqrt(1 - unitY * unitY);
-        const theta = GOLDEN_ANGLE * index + sphereAngle;
-        x = lerp(centerX + Math.cos(theta) * ringRadius * sphereRadius, homeX, progress);
-        y = lerp(centerY + unitY * sphereRadius, homeY, progress);
-      }
+    let size = layout.size;
+    if (moving) {
+      const spread = ((index * 37) % 100) / 100;
+      const lineX = left + ((index + 0.5) / run.count) * width;
+      const emit = easeOutCubic(
+        clamp01((elapsed - POINT_HOLD_MS - spread * LINE_EMIT_SPREAD_MS) / LINE_EMIT_MS)
+      );
+      const unfold = easeInOutCubic(
+        clamp01((elapsed - LINE_HOLD_END_MS - spread * UNFOLD_SPREAD_MS) / UNFOLD_MS)
+      );
+      const lineStepX = lerp(centerX, lineX, emit);
+      x = lerp(lineStepX, homeX, unfold);
+      y = lerp(centerY, homeY, unfold);
+      size = lerp(LINE_POINT_SIZE, layout.size, unfold);
     }
 
-    let size = layout.size;
     const age = now - cell.at;
     if (cell.status !== null && !reduceMotion && age < POP_MS) {
       const pop = 1 - age / POP_MS;
-      size = layout.size * (1 + 0.6 * pop * pop);
+      size *= 1 + 0.6 * pop * pop;
     }
 
     context.fillStyle = cellColor(cell.status);
@@ -237,14 +264,15 @@ function drawCells(left, top, width, bottom) {
 
     if (index === run.winnerIndex) {
       winnerCenter = [x, y];
+      winnerSize = size;
       context.strokeStyle = colors.text;
       context.lineWidth = 2;
-      context.strokeRect(x - layout.size / 2 - 2, y - layout.size / 2 - 2, layout.size + 4, layout.size + 4);
+      context.strokeRect(x - size / 2 - 2, y - size / 2 - 2, size + 4, size + 4);
     }
   });
 
-  if (winnerCenter && run.lockAt && !reduceMotion) {
-    const ringProgress = (now - run.lockAt) / RING_MS;
+  if (winnerCenter && run.startedAt && !reduceMotion) {
+    const ringProgress = (elapsed - RESULT_AT_MS) / RING_MS;
     if (ringProgress >= 0 && ringProgress < 1) {
       context.strokeStyle = `rgba(216, 154, 43, ${0.85 * (1 - ringProgress)})`;
       context.lineWidth = 3;
@@ -252,7 +280,7 @@ function drawCells(left, top, width, bottom) {
       context.arc(
         winnerCenter[0],
         winnerCenter[1],
-        layout.size + easeOutCubic(ringProgress) * Math.min(width, bottom - top) * 0.3,
+        winnerSize + easeOutCubic(ringProgress) * Math.min(width, bottom - top) * 0.3,
         0,
         Math.PI * 2
       );
@@ -353,9 +381,8 @@ function draw() {
 
   const now = performance.now();
   const settling = run.lastArrival && now - run.lastArrival < Math.max(FLASH_MS, POP_MS);
-  const launching = run.startedAt && now - run.startedAt < FLIGHT_DELAY_MS + FLIGHT_MS + 50;
-  const pulsing = run.lockAt && now - run.lockAt < RING_MS;
-  if (run.running || settling || launching || pulsing) {
+  const moving = !reduceMotion && run.startedAt && now - run.startedAt < MOTION_TOTAL_MS + 50;
+  if (run.running || settling || moving) {
     requestFrame();
   }
 }
