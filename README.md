@@ -152,6 +152,7 @@ Press **Run** and the simulator sends one real `POST /v1/handshake` request per 
 - The real winning agent is outlined and named in the header, with the time the lock was granted.
 - A chart shows responses arriving over time, and the lock/conflict counters tick up live.
 - Nothing is decided ahead of time; the winner and timings are whatever the server returned.
+- Motion: on Run the cells burst out of a rotating sphere (the same effect as the landing intro) and glide into their slots, each cell pops when its response arrives, and the winning agent sends out a pulse ring. The motion is decorative: positions never encode results and colours always come from the real responses. It is disabled for visitors who prefer reduced motion (`prefers-reduced-motion`).
 
 If the API is not reachable, the view is labelled **SIMULATED**, its outcomes are generated locally, and the timing label reads "simulated, not measured". It never presents generated results as measured.
 

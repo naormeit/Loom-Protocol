@@ -49,6 +49,18 @@ const colors = {
 };
 
 const FLASH_MS = 450;
+const FLIGHT_DELAY_MS = 450; // max stagger before a cell leaves the sphere
+const FLIGHT_MS = 700; // time for a cell to glide from the sphere to its slot
+const POP_MS = 260; // size pop when a response arrives
+const RING_MS = 800; // pulse ring around the winning agent
+const reduceMotion =
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const clamp01 = (value) => Math.max(0, Math.min(1, value));
+const lerp = (from, to, amount) => from + (to - from) * amount;
+const easeOutCubic = (amount) => 1 - Math.pow(1 - amount, 3);
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 // One run = one cell per agent. In live mode each cell is filled when that
 // agent's real HTTP response arrives; nothing is decided ahead of time.
@@ -65,6 +77,7 @@ function newRun(count, source) {
     startedAt: 0,
     running: false,
     firstLockMs: null,
+    lockAt: 0,
     winnerIndex: -1,
     lastArrival: 0,
     locks: 0,
@@ -97,6 +110,7 @@ function recordResponse(index, status) {
   if (status === 201) {
     run.locks += 1;
     if (run.firstLockMs === null) {
+      run.lockAt = now;
       run.firstLockMs = now - run.startedAt;
       run.winnerIndex = index;
     }
@@ -175,31 +189,76 @@ function drawHeader(width) {
 function drawCells(left, top, width, bottom) {
   const layout = gridLayout(width, top, bottom, run.count);
   const now = performance.now();
+  const elapsed = run.startedAt ? now - run.startedAt : 0;
+  const centerX = left + width / 2;
+  const centerY = top + (bottom - top) / 2;
+  const sphereRadius = Math.min(width, bottom - top) * 0.45;
+  const sphereAngle = elapsed * 0.0018;
+  const flying = !reduceMotion && run.startedAt > 0;
+  let winnerCenter = null;
 
   run.cells.forEach((cell, index) => {
     const column = index % layout.columns;
     const row = Math.floor(index / layout.columns);
-    const x = left + column * (layout.size + layout.gap);
-    const y = top + row * (layout.size + layout.gap);
+    const homeX = left + column * (layout.size + layout.gap) + layout.size / 2;
+    const homeY = top + row * (layout.size + layout.gap) + layout.size / 2;
 
-    context.fillStyle = cellColor(cell.status);
-    context.fillRect(x, y, layout.size, layout.size);
-
-    if (cell.status !== null) {
-      const age = now - cell.at;
-      if (age < FLASH_MS) {
-        context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
-        context.lineWidth = 2;
-        context.strokeRect(x - 1, y - 1, layout.size + 2, layout.size + 2);
+    // Motion only: cells start on a rotating sphere and glide to their slot.
+    // Position never encodes the result; colour always comes from the response.
+    let x = homeX;
+    let y = homeY;
+    if (flying) {
+      const delay = ((index * 37) % 100) / 100 * FLIGHT_DELAY_MS;
+      const progress = easeOutCubic(clamp01((elapsed - delay) / FLIGHT_MS));
+      if (progress < 1) {
+        const unitY = 1 - (index / Math.max(1, run.count - 1)) * 2;
+        const ringRadius = Math.sqrt(1 - unitY * unitY);
+        const theta = GOLDEN_ANGLE * index + sphereAngle;
+        x = lerp(centerX + Math.cos(theta) * ringRadius * sphereRadius, homeX, progress);
+        y = lerp(centerY + unitY * sphereRadius, homeY, progress);
       }
     }
 
+    let size = layout.size;
+    const age = now - cell.at;
+    if (cell.status !== null && !reduceMotion && age < POP_MS) {
+      const pop = 1 - age / POP_MS;
+      size = layout.size * (1 + 0.6 * pop * pop);
+    }
+
+    context.fillStyle = cellColor(cell.status);
+    context.fillRect(x - size / 2, y - size / 2, size, size);
+
+    if (cell.status !== null && age < FLASH_MS) {
+      context.strokeStyle = `rgba(255, 250, 242, ${1 - age / FLASH_MS})`;
+      context.lineWidth = 2;
+      context.strokeRect(x - size / 2 - 1, y - size / 2 - 1, size + 2, size + 2);
+    }
+
     if (index === run.winnerIndex) {
+      winnerCenter = [x, y];
       context.strokeStyle = colors.text;
       context.lineWidth = 2;
-      context.strokeRect(x - 2, y - 2, layout.size + 4, layout.size + 4);
+      context.strokeRect(x - layout.size / 2 - 2, y - layout.size / 2 - 2, layout.size + 4, layout.size + 4);
     }
   });
+
+  if (winnerCenter && run.lockAt && !reduceMotion) {
+    const ringProgress = (now - run.lockAt) / RING_MS;
+    if (ringProgress >= 0 && ringProgress < 1) {
+      context.strokeStyle = `rgba(216, 154, 43, ${0.85 * (1 - ringProgress)})`;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(
+        winnerCenter[0],
+        winnerCenter[1],
+        layout.size + easeOutCubic(ringProgress) * Math.min(width, bottom - top) * 0.3,
+        0,
+        Math.PI * 2
+      );
+      context.stroke();
+    }
+  }
 }
 
 function drawTimeline(left, top, width, height) {
@@ -292,8 +351,11 @@ function draw() {
   }
   drawLegend(width, height);
 
-  const stillFlashing = run.lastArrival && performance.now() - run.lastArrival < FLASH_MS;
-  if (run.running || stillFlashing) {
+  const now = performance.now();
+  const settling = run.lastArrival && now - run.lastArrival < Math.max(FLASH_MS, POP_MS);
+  const launching = run.startedAt && now - run.startedAt < FLIGHT_DELAY_MS + FLIGHT_MS + 50;
+  const pulsing = run.lockAt && now - run.lockAt < RING_MS;
+  if (run.running || settling || launching || pulsing) {
     requestFrame();
   }
 }
