@@ -9,7 +9,8 @@
 
   const STORAGE_KEY = "loomIntroSeen";
   const LOGO_URL = "assets/loom-logo.png";
-  const TIMING = { gather: 700, sphere: 650, morph: 900, hold: 350, fade: 400 };
+  // Total before the fade: 3400ms; with the 400ms fade the intro lasts about 3.8s.
+  const TIMING = { gather: 900, sphere: 1000, morph: 1100, hold: 400, fade: 400 };
   const SPREAD = 250; // per-particle start offset in ms, for an organic feel
   const FAILSAFE_MS = 7000;
 

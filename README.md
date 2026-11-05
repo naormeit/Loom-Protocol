@@ -166,7 +166,7 @@ python -m core.api.server
 
 ### Landing-page intro
 
-`website/hero-intro.js` plays a short decorative intro: particles gather into a rotating sphere, morph into the Loom logo (sampled from `website/assets/loom-logo.png`), and the page content then fades in. It does not represent any request or protocol data.
+`website/hero-intro.js` plays a short decorative intro: particles gather into a rotating sphere, morph into the Loom logo (sampled from `website/assets/loom-logo.png`), and the page content then fades in. The whole intro lasts about 3.8 seconds (3.4 seconds of animation plus a 0.4 second fade); the timings are in the `TIMING` constant at the top of `website/hero-intro.js`. It does not represent any request or protocol data.
 
 - Plays once per browser session; `?intro=1` forces it and `?intro=0` disables it.
 - Skipped when the visitor prefers reduced motion.
