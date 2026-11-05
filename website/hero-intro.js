@@ -319,7 +319,7 @@
   }
 
   function revealContent() {
-    const targets = document.querySelectorAll(".hero-copy > *, .sim-panel");
+    const targets = document.querySelectorAll("[data-reveal]");
     targets.forEach((element, index) => {
       element.animate(
         [

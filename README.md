@@ -35,8 +35,8 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Python SDK (`reserve`, optional signing) | Implemented | `sdk/python/`. |
 | HMAC-SHA256 signing, nonce, timestamp, replay protection | Implemented | Shared-secret scheme; see [limitations](#known-limitations). |
 | Local intent parser and content-safety checker | Implemented | Deterministic; the safety check is a keyword list, not real screening. |
-| Static website with live per-agent response grid | Implemented | See [The Website](#the-website). |
-| Landing-page particle intro | Implemented | Decorative only. |
+| Static website: landing page plus live demo page with per-agent response grid | Implemented | See [The Website](#the-website). |
+| Landing-page particle intro | Implemented | Decorative only; plays on the landing page. |
 | Azure-mode adapters (OpenAI-style parser, Content Safety, Cosmos DB) | Implemented, not live-validated | Unit-tested with mocks only. |
 | Hosted deployment on Azure Container Apps | Partial | Deployed and health-checked in `LOOM_MODE=local` only. |
 | CI (Python 3.10/3.11, website checks, Docker build, Bicep validation) | Implemented | See [CI](#continuous-integration). |
@@ -126,7 +126,12 @@ Expected result: one secured lock and 99 agents receiving conflict negotiation r
 
 ## The Website
 
-The static website in `website/` is the judge-facing demo surface. It needs no build step.
+The static website in `website/` has two pages and needs no build step:
+
+- **Landing page** (`index.html`): the front door. A short story for a first-time visitor: what Loom is, the problem (framed as a hypothesis), how it works in three steps, who it might be for, an honest "where it stands" section, and two calls to action. It opens with the particle intro.
+- **Live demo** (`demo.html`): the simulator with real responses, a "how to read the simulator" section, the protocol path, the implementation status, and the proof grid.
+
+The landing page has an illustration of many agents, Loom, one lock and the retry answers; it is labelled as an illustration and is not live data. The "Tell us what breaks for you" button opens a pre-filled GitHub issue on this repository, which is a lightweight way to collect problem reports without running any backend. To use a form or another channel instead, change the `href` of those links in `website/index.html`.
 
 ### Run it locally
 
@@ -142,9 +147,9 @@ Terminal 2, the website (serve it over HTTP so the logo can be sampled for the i
 python -m http.server 5500 --bind 127.0.0.1 --directory website
 ```
 
-Open `http://127.0.0.1:5500/`. The API allows browser calls from `http://127.0.0.1:5500` and `http://localhost:5500` by default.
+Open `http://127.0.0.1:5500/` for the landing page and `http://127.0.0.1:5500/demo.html` for the simulator. The API allows browser calls from `http://127.0.0.1:5500` and `http://localhost:5500` by default.
 
-### Live response grid (the simulator)
+### Live response grid (the simulator, on `demo.html`)
 
 Press **Run** and the simulator sends one real `POST /v1/handshake` request per agent (20 to 300, set by the slider):
 
@@ -165,7 +170,7 @@ $env:LOOM_ALLOWED_ORIGINS="https://my-site.example.com,https://other.example.com
 python -m core.api.server
 ```
 
-### Landing-page intro
+### Landing-page intro (on `index.html`)
 
 `website/hero-intro.js` plays a short decorative intro: particles (electric blue, soft lavender and acid green, defined in the `PALETTE` constant of `website/hero-intro.js`) gather into a rotating sphere, morph into the Loom logo (sampled from `website/assets/loom-logo.png`), and the page content then fades in. As the particles land on the logo's shape, a clean cut-out of the real logo (white background made transparent, aligned to the particle targets) is cross-faded in and the particles fade out, so the finished mark is solid with no gaps. The whole intro lasts about 3.8 seconds (3.4 seconds of animation plus a 0.4 second fade); the timings are in the `TIMING` constant at the top of `website/hero-intro.js`. It does not represent any request or protocol data.
 
@@ -317,7 +322,7 @@ The full plan, rubric mapping, ten-service Azure set, evidence checklist, and ti
 - `sdk/python/`: Python client SDK.
 - `examples/`: agent and scenario demos.
 - `tests/`: unit and integration tests.
-- `website/`: static demo site (`index.html`, `app.js` simulator, `hero-intro.js` intro, `styles.css`, `assets/`).
+- `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `styles.css`, `assets/`).
 - `infra/main.bicep`: Azure Container Apps template.
 - `Dockerfile`: API container image.
 - `docs/competition/`: Imagine Cup 2027 plan.
@@ -331,7 +336,7 @@ The full plan, rubric mapping, ten-service Azure set, evidence checklist, and ti
 GitHub Actions runs on every push and pull request:
 
 - **Python 3.10 and 3.11:** import smoke test, compile check, unit tests, local example smoke, API scenario smoke.
-- **Website static checks:** required files and key strings in `index.html`, `app.js`, and `styles.css`.
+- **Website static checks:** required files and key strings in the landing page (`index.html`), the demo page (`demo.html`), `app.js`, `hero-intro.js`, and `styles.css`.
 - **Docker build:** builds the API image and smoke-tests it.
 - **Bicep validation:** builds `infra/main.bicep`.
 
