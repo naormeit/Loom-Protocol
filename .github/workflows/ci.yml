@@ -109,6 +109,7 @@ jobs:
               Path("website/demo.html"),
               Path("website/app.js"),
               Path("website/hero-intro.js"),
+              Path("website/landing.js"),
               Path("website/styles.css"),
               Path("website/README.md"),
           ]
@@ -127,6 +128,7 @@ jobs:
               'href="styles.css"',
               'href="demo.html"',
               'src="hero-intro.js"',
+              'src="landing.js"',
               "data-reveal",
           ]
           demo_needles = [

@@ -133,6 +133,15 @@ The static website in `website/` has two pages and needs no build step:
 
 The landing page has an illustration of many agents, Loom, one lock and the retry answers; it is labelled as an illustration and is not live data. The "Tell us what breaks for you" button opens a pre-filled GitHub issue on this repository, which is a lightweight way to collect problem reports without running any backend. To use a form or another channel instead, change the `href` of those links in `website/index.html`.
 
+#### Landing-page animation
+
+All landing-page animation is decorative and plain CSS and JavaScript (no animation library):
+
+- **Scroll reveal** (`website/landing.js`): sections, headings, step cards and status cards fade and rise into view as you scroll, with a 90 ms stagger between sibling cards. Content stays visible if the script does not run.
+- **Looping illustration** (CSS keyframes in `website/styles.css`, 5-second loop): agents light up and send requests along flowing dashed lines, Loom pulses, the winning agent pops and gets its "201 lock" label, then the retry agents light up with "409 + retry guidance". It is labelled as an illustration, not live data.
+- **Hover and focus**: buttons lift on hover, cards brighten, and links, buttons and form controls get a visible keyboard focus outline (also on the demo page).
+- **Reduced motion**: with `prefers-reduced-motion`, scroll reveal, the illustration loop and hover motion are all switched off and everything is shown statically.
+
 ### Run it locally
 
 Terminal 1, the API:
@@ -322,7 +331,7 @@ The full plan, rubric mapping, ten-service Azure set, evidence checklist, and ti
 - `sdk/python/`: Python client SDK.
 - `examples/`: agent and scenario demos.
 - `tests/`: unit and integration tests.
-- `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `styles.css`, `assets/`).
+- `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `landing.js` scroll reveal, `styles.css`, `assets/`).
 - `infra/main.bicep`: Azure Container Apps template.
 - `Dockerfile`: API container image.
 - `docs/competition/`: Imagine Cup 2027 plan.
@@ -336,7 +345,7 @@ The full plan, rubric mapping, ten-service Azure set, evidence checklist, and ti
 GitHub Actions runs on every push and pull request:
 
 - **Python 3.10 and 3.11:** import smoke test, compile check, unit tests, local example smoke, API scenario smoke.
-- **Website static checks:** required files and key strings in the landing page (`index.html`), the demo page (`demo.html`), `app.js`, `hero-intro.js`, and `styles.css`.
+- **Website static checks:** required files and key strings in the landing page (`index.html`), the demo page (`demo.html`), `app.js`, `hero-intro.js`, `landing.js`, and `styles.css`.
 - **Docker build:** builds the API image and smoke-tests it.
 - **Bicep validation:** builds `infra/main.bicep`.
 

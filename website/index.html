@@ -68,13 +68,13 @@
             <title id="ill-title">Many agents send requests to Loom; one gets a lock and the rest are told to retry</title>
             <desc id="ill-desc">An illustration, not live data. Seven agents on the left send requests into Loom in the middle. On the right, one agent receives a 201 lock and six receive a 409 with retry guidance.</desc>
             <g class="ill-agents">
-              <rect x="30" y="24" width="26" height="26" rx="4" />
-              <rect x="30" y="64" width="26" height="26" rx="4" />
-              <rect x="30" y="104" width="26" height="26" rx="4" />
-              <rect x="30" y="144" width="26" height="26" rx="4" />
-              <rect x="30" y="184" width="26" height="26" rx="4" />
-              <rect x="30" y="224" width="26" height="26" rx="4" />
-              <rect x="30" y="264" width="26" height="26" rx="4" />
+              <rect style="--i:0" x="30" y="24" width="26" height="26" rx="4" />
+              <rect style="--i:1" x="30" y="64" width="26" height="26" rx="4" />
+              <rect style="--i:2" x="30" y="104" width="26" height="26" rx="4" />
+              <rect style="--i:3" x="30" y="144" width="26" height="26" rx="4" />
+              <rect style="--i:4" x="30" y="184" width="26" height="26" rx="4" />
+              <rect style="--i:5" x="30" y="224" width="26" height="26" rx="4" />
+              <rect style="--i:6" x="30" y="264" width="26" height="26" rx="4" />
             </g>
             <g class="ill-flow">
               <path d="M60 37 C170 37 190 165 235 165" />
@@ -99,12 +99,12 @@
             </g>
             <rect class="ill-win" x="480" y="39" width="26" height="26" rx="4" />
             <g class="ill-lose">
-              <rect x="480" y="87" width="26" height="26" rx="4" />
-              <rect x="480" y="127" width="26" height="26" rx="4" />
-              <rect x="480" y="167" width="26" height="26" rx="4" />
-              <rect x="480" y="209" width="26" height="26" rx="4" />
-              <rect x="480" y="249" width="26" height="26" rx="4" />
-              <rect x="480" y="287" width="26" height="26" rx="4" />
+              <rect style="--i:0" x="480" y="87" width="26" height="26" rx="4" />
+              <rect style="--i:1" x="480" y="127" width="26" height="26" rx="4" />
+              <rect style="--i:2" x="480" y="167" width="26" height="26" rx="4" />
+              <rect style="--i:3" x="480" y="209" width="26" height="26" rx="4" />
+              <rect style="--i:4" x="480" y="249" width="26" height="26" rx="4" />
+              <rect style="--i:5" x="480" y="287" width="26" height="26" rx="4" />
             </g>
             <text class="ill-label" x="514" y="56">201 lock</text>
             <text class="ill-label ill-label-lose" x="514" y="190">409 + retry guidance</text>
@@ -236,6 +236,7 @@
       <span><a href="demo.html">Live demo</a> · Atomic reservation middleware for agentic transactions.</span>
     </footer>
 
+    <script src="landing.js"></script>
     <script src="hero-intro.js"></script>
   </body>
 </html>

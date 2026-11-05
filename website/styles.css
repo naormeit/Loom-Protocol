@@ -731,3 +731,185 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* Landing-page animation (see landing.js). Decorative only. */
+.js-anim [data-scroll] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d, 0ms);
+}
+
+.js-anim [data-scroll].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Looping illustration: agents send, Loom pulses, one gets the lock, the rest retry. */
+.illustration svg rect,
+.illustration svg text {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ill-flow path {
+  stroke: var(--teal);
+  stroke-dasharray: 5 7;
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-in 5s ease-in-out infinite;
+}
+
+.ill-out path {
+  stroke: var(--coral);
+  stroke-dasharray: 5 7;
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-out 5s ease-in-out infinite;
+}
+
+.ill-out .ill-out-win {
+  stroke: var(--amber);
+  animation:
+    ill-dash 1s linear infinite,
+    ill-flow-out-win 5s ease-in-out infinite;
+}
+
+.ill-agents rect {
+  animation: ill-send 5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.08s);
+}
+
+.ill-loom {
+  animation: ill-core 5s ease-in-out infinite;
+}
+
+.ill-win {
+  animation: ill-win 5s ease-in-out infinite;
+}
+
+.ill-lose rect {
+  animation: ill-lose 5s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.07s);
+}
+
+.ill-label {
+  animation: ill-label 5s ease-in-out infinite;
+}
+
+@keyframes ill-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes ill-send {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  10% { opacity: 1; transform: scale(1.18); }
+  30% { opacity: 0.65; transform: scale(1); }
+}
+
+@keyframes ill-flow-in {
+  0%, 100% { stroke-opacity: 0.12; }
+  8%, 30% { stroke-opacity: 0.9; }
+  45% { stroke-opacity: 0.12; }
+}
+
+@keyframes ill-core {
+  0%, 30%, 100% { transform: scale(1); }
+  38% { transform: scale(1.07); }
+  46% { transform: scale(1); }
+}
+
+@keyframes ill-flow-out {
+  0%, 38%, 100% { stroke-opacity: 0.1; }
+  48%, 68% { stroke-opacity: 0.85; }
+  85% { stroke-opacity: 0.2; }
+}
+
+@keyframes ill-flow-out-win {
+  0%, 36%, 100% { stroke-opacity: 0.1; }
+  44%, 62% { stroke-opacity: 1; }
+  80% { stroke-opacity: 0.35; }
+}
+
+@keyframes ill-win {
+  0%, 40% { opacity: 0.25; transform: scale(0.85); }
+  48% { opacity: 1; transform: scale(1.35); }
+  60%, 90% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.25; transform: scale(0.85); }
+}
+
+@keyframes ill-lose {
+  0%, 48% { opacity: 0.2; }
+  58%, 90% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+@keyframes ill-label {
+  0%, 44% { opacity: 0; }
+  56%, 90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Hover and focus states. */
+.button {
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(23, 33, 31, 0.14);
+}
+
+.button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.steps li,
+.status-grid article {
+  transition: background-color 0.25s ease;
+}
+
+.steps li:hover,
+.status-grid article:hover {
+  background: #ffffff;
+}
+
+a:focus-visible,
+.button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js-anim [data-scroll] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .illustration svg *,
+  .button {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .ill-flow path,
+  .ill-out path {
+    stroke-dasharray: none;
+  }
+
+  .button:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
