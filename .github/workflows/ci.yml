@@ -28,7 +28,7 @@ jobs:
       - name: Install package and test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
+          pip install -e ".[mcp]"
 
       - name: Import smoke test
         run: |
@@ -44,7 +44,11 @@ jobs:
             run.py \
             core/api/server.py \
             examples/bots/simple_buyer.py \
-            examples/scenarios/limited_inventory_drop.py
+            examples/scenarios/limited_inventory_drop.py \
+            examples/scenarios/two_agent_demo.py \
+            examples/mcp/mcp_client_demo.py \
+            integrations/mcp_server/loom_tools.py \
+            integrations/mcp_server/loom_mcp_server.py
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test*.py"
@@ -86,6 +90,13 @@ jobs:
             --agents 20 \
             --resource-id CI-DROP \
             --require-one-winner
+
+          python examples/scenarios/two_agent_demo.py \
+            --base-url http://127.0.0.1:8090 \
+            --check
+
+          python examples/mcp/mcp_client_demo.py \
+            --base-url http://127.0.0.1:8090
 
   website:
     name: Website static checks

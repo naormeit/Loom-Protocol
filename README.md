@@ -18,6 +18,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 - [Configuration Reference](#configuration-reference)
 - [Signed Packets](#signed-packets)
 - [API Contract](#api-contract)
+- [Agent Integrations](#agent-integrations)
 - [Azure Mode](#azure-mode)
 - [Microsoft Imagine Cup 2027](#microsoft-imagine-cup-2027)
 - [Audit Log and Rate Limiting](#audit-log-and-rate-limiting)
@@ -34,6 +35,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Atomic local ledger (one winner under concurrency) | Implemented | Thread-safe, in memory; proven by tests and the collision scenario. |
 | Local HTTP API gateway (`/health`, `POST /v1/handshake`) | Implemented | Standard-library server; intended for local and demo use. |
 | Python SDK (`reserve`, optional signing) | Implemented | `sdk/python/`. |
+| MCP server (`reserve_resource`, `loom_status`) and a two-agent demo | Implemented | Round trip tested with the official MCP Python client; see [Agent Integrations](#agent-integrations). Not tested with a real MCP host or an LLM. |
 | HMAC-SHA256 signing, nonce, timestamp, replay protection | Implemented | Shared-secret scheme; see [limitations](#known-limitations). |
 | Local intent parser and content-safety checker | Implemented | Deterministic; the safety check is a keyword list, not real screening. |
 | Static website: landing page plus live demo page with per-agent response grid | Implemented | See [The Website](#the-website). |
@@ -266,6 +268,72 @@ Status codes:
 
 Every response includes a `correlation_id`. `GET /health` returns `{"status": "ok", "service": "loom-atp"}`.
 
+## Agent Integrations
+
+### MCP server (`integrations/mcp_server/`)
+
+Any MCP-capable agent can reserve a resource through Loom with an MCP server that wraps the gateway. It is a client of the HTTP API, so start the gateway first (`python -m core.api.server`).
+
+Install the MCP SDK (Python 3.10+; the project pins `mcp>=1.2,<2` and has not been tried with SDK 2.x):
+
+```powershell
+pip install -e ".[mcp]"
+```
+
+Run it over stdio, the way an MCP client launches a server:
+
+```powershell
+python integrations\mcp_server\loom_mcp_server.py
+```
+
+Tools it offers:
+
+- `reserve_resource(resource_id, intent, agent_id="", expiry_ms=5000)`: asks Loom for an exclusive, time-limited lock. The result always has the same shape: `outcome` (`LOCKED`, `CONFLICT`, `UNSAFE`, `UNAUTHORIZED`, `INVALID`, `RATE_LIMITED`, or `ERROR`), `locked` (true only when this agent holds the resource), the raw `status`, `message`, `correlation_id` (matches the audit log), and a plain-language `next_action`. Conflicts carry `held_by`, `retry_backoff_ms`, and `suggested_alternative_resource`; rate limits carry `retry_after_ms`. If Loom cannot be reached the result is `ERROR` with `locked: false`, never a lock.
+- `loom_status()`: checks that the gateway is reachable.
+
+Configuration (environment variables of the MCP server process):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `LOOM_API_URL` | `http://127.0.0.1:8080` | Gateway to call. |
+| `LOOM_SHARED_SECRET` | empty | Sign packets with this secret (match the gateway's signing settings). |
+| `LOOM_AGENT_ID` | empty | Pin the agent identity: every reservation is made as this agent and the model-supplied `agent_id` is ignored. **Set this in production**, otherwise a model, or a prompt injected into it, can claim any agent id. |
+
+Example client configuration (the exact file depends on your MCP client):
+
+```json
+{
+  "mcpServers": {
+    "loom": {
+      "command": "python",
+      "args": ["integrations/mcp_server/loom_mcp_server.py"],
+      "env": {
+        "LOOM_API_URL": "http://127.0.0.1:8080",
+        "LOOM_AGENT_ID": "shopping-agent-1"
+      }
+    }
+  }
+}
+```
+
+See it work without an LLM: with the gateway running,
+
+```powershell
+python examples\mcp\mcp_client_demo.py
+```
+
+starts the server over stdio with the official MCP Python client, lists its tools, and has two agents reserve the same resource: the first gets `LOCKED`, the second gets `CONFLICT` with its next steps. What has been tested: that round trip, locally on Windows (CI is configured to run it too). What has not: a real MCP host such as Claude Desktop, or an LLM choosing to call the tool.
+
+The logic that turns Loom responses into these results lives in `integrations/mcp_server/loom_tools.py` and has no MCP dependency, so other agent frameworks can reuse it.
+
+### Two-agent demo
+
+```powershell
+python examples\scenarios\two_agent_demo.py
+```
+
+Two scripted agents (plain Python, no LLM) ask for the same item at the same moment. One gets the lock. The other reads the machine-readable conflict, waits the suggested back-off, asks for the suggested alternative resource, and gets it. Add `--check` to fail unless each agent ends up holding exactly one distinct resource. The retry hint Loom returns today is simple (a jittered back-off and a `<resource>_ALT` suggestion), so this shows the loop working end to end, not a smart negotiation policy.
+
 ## Azure Mode
 
 The MVP supports two runtime modes:
@@ -348,6 +416,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - **Negotiation is synthetic.** The suggested alternative resource and retry backoff are demo logic, not a negotiation policy.
 - **The local ledger is in memory and single-process.** Cross-process and cross-region locking relies on the Cosmos DB adapter, which has not been tested against real contention.
 - **The API uses the standard-library HTTP server,** suitable for local and demo use only.
+- **The MCP server and demo agents have only been exercised with the official MCP Python client and scripted agents.** No LLM-driven agent has been run through them yet.
 - **No customer validation or pricing yet.**
 
 ## Repository Map
@@ -362,7 +431,8 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - `core/database/`: local atomic ledger and Cosmos DB adapter.
 - `core/api/`: local HTTP API gateway.
 - `sdk/python/`: Python client SDK.
-- `examples/`: agent and scenario demos.
+- `integrations/mcp_server/`: MCP server (`loom_mcp_server.py`) and the MCP-free result logic (`loom_tools.py`).
+- `examples/`: agent and scenario demos (`scenarios/two_agent_demo.py`, `mcp/mcp_client_demo.py`).
 - `tests/`: unit and integration tests.
 - `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `landing.js` scroll reveal, `styles.css`, `assets/`).
 - `infra/main.bicep`: Azure Container Apps template.
@@ -377,7 +447,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 
 GitHub Actions runs on every push and pull request:
 
-- **Python 3.10 and 3.11:** import smoke test, compile check, unit tests, local example smoke, API scenario smoke.
+- **Python 3.10 and 3.11:** installs the package with the `mcp` extra, import smoke test, compile check, unit tests (including the real MCP stdio round trip), local example smoke, and an API scenario smoke that also runs the two-agent demo and the MCP client demo against a live gateway.
 - **Website static checks:** required files and key strings in the landing page (`index.html`), the demo page (`demo.html`), `app.js`, `hero-intro.js`, `landing.js`, and `styles.css`.
 - **Docker build:** builds the API image and smoke-tests it.
 - **Bicep validation:** builds `infra/main.bicep`.
@@ -390,5 +460,5 @@ GitHub Actions runs on every push and pull request:
 4. **Security:** public-key signatures, a stronger local safety check, Entra ID or an explicit scope-out (the audit log and rate limiting now exist locally; anchoring the audit head hash remotely is still open).
 5. **Load evidence:** 100 and 1,000 agent runs (then larger) with saved latency and conflict metrics.
 6. **Infrastructure as code** for all required Azure services.
-7. **TypeScript SDK** and a minimal agent integration sample.
+7. **TypeScript SDK**, and a plugin for an agent framework (for example Semantic Kernel or LangChain). The MCP server and a two-agent demo already exist.
 8. **Submission package:** written responses, pitch deck, demo video, architecture diagram, judge FAQ.
