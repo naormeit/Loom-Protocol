@@ -405,7 +405,7 @@ Operational docs: `docs/operations/azure_mode.md` and `docs/operations/deploymen
 
 Loom is being prepared as an entry to Imagine Cup 2027. The format is a startup competition run through Microsoft for Startups, not a student-project contest:
 
-- Applications close **2027-02-28, 23:59 CST** via Award Force.
+- Applications close **2027-02-28, 23:59 CST** via Award Force. The Award Force profile needs the registration documents, so the company has to exist (approved) before the profile is created; the referral code then follows after screening.
 - The entrant must be a registered legal entity founded on or after 2024-11-02, with at most four team members.
 - By the deadline the startup must use at least ten Azure services on one subscription, with at least USD 1.00 of usage on each.
 - Planned category: **Student Startup** (all founders enrolled students; the Student Prize is the ceiling for that category).
