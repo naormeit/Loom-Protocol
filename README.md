@@ -52,7 +52,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Public-key signatures (true non-repudiation) | Planned | |
 | Microsoft Entra ID authority verification | Planned | Not implemented. |
 | TypeScript SDK | Planned | |
-| Customer validation and pricing | Planned | None collected yet. |
+| Customer validation and pricing | Planned | None collected yet. Buyer and pricing hypotheses are drafted in [`docs/business/buyer_and_pricing_hypotheses.md`](docs/business/buyer_and_pricing_hypotheses.md); none is validated. |
 
 ## How It Works
 
@@ -447,7 +447,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - **The local ledger is in memory and single-process.** Cross-process and cross-region locking relies on the Cosmos DB adapter, which has not been tested against real contention.
 - **The API uses the standard-library HTTP server,** suitable for local and demo use only.
 - **The MCP server and demo agents have only been exercised with the official MCP Python client and scripted agents.** No LLM-driven agent has been run through them yet.
-- **No customer validation or pricing yet.**
+- **No customer validation or pricing yet.** Buyer and pricing hypotheses are written down in [`docs/business/buyer_and_pricing_hypotheses.md`](docs/business/buyer_and_pricing_hypotheses.md) but untested.
 
 ## Repository Map
 
@@ -468,6 +468,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - `infra/main.bicep`: Azure Container Apps template.
 - `Dockerfile`: API container image.
 - `docs/competition/`: Imagine Cup 2027 plan.
+- `docs/business/`: buyer and pricing hypotheses (unvalidated).
 - `docs/operations/`: Azure mode, deployment runbook, validation evidence.
 - `docs/spec/`: ATP specification and architecture notes.
 - `docs/website/`: website notes.

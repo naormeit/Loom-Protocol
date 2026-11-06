@@ -69,7 +69,7 @@ Ordered by value to the rubric.
 
 - **Customer validation.** 15 interviews with marketplace operators, ecommerce platform engineers, and agent builders. Three recurring pain patterns. One design partner, pilot, waitlist, or LOI. An iteration log showing what changed.
 - **Campus pilot** at the university for users and MAU, as originally planned for fall 2026.
-- **Business model.** Name the first buyer and user. Replace the "Loom Tax" and "monopoly" framing with a credible early pricing model. Compare against vendor APIs, queues, payment pre-authorization, distributed locks, and agent frameworks.
+- **Business model.** Name the first buyer and user. Replace the "Loom Tax" and "monopoly" framing with a credible early pricing model. Compare against vendor APIs, queues, payment pre-authorization, distributed locks, and agent frameworks. A first draft of buyers, pricing models and the questions to ask is in [`docs/business/buyer_and_pricing_hypotheses.md`](../business/buyer_and_pricing_hypotheses.md); it is unvalidated until the conversations happen.
 - **Team.** Document roles, time commitment, and technical composition. Confirm every founder meets the student-enrollment window.
 
 ## Submission package
