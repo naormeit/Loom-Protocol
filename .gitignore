@@ -420,3 +420,5 @@ FodyWeavers.xsd
 
 # Python build and metadata artifacts
 *.egg-info/
+# Local load-test output (committed results live in docs/performance)
+loadtest/results/

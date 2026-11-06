@@ -21,6 +21,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 - [Signed Packets](#signed-packets)
 - [API Contract](#api-contract)
 - [Agent Integrations](#agent-integrations)
+- [Load Testing](#load-testing)
 - [Azure Mode](#azure-mode)
 - [Microsoft Imagine Cup 2027](#microsoft-imagine-cup-2027)
 - [Audit Log and Rate Limiting](#audit-log-and-rate-limiting)
@@ -37,6 +38,7 @@ The current MVP focuses on **limited-inventory agent commerce**. A shopping agen
 | Atomic local ledger (one winner under concurrency) | Implemented | Thread-safe, in memory; proven by tests and the collision scenario. |
 | Local HTTP API gateway (`/health`, `POST /v1/handshake`) | Implemented | Standard-library server; intended for local and demo use. |
 | Python SDK (`reserve`, optional signing) | Implemented | `sdk/python/`. |
+| Load-test harness and local results (100 to 10,000 agents) | Implemented | One-winner rule held in all 22 saved runs; see [Load Testing](#load-testing). Local mode on one machine; not yet run against Azure. |
 | MCP server (`reserve_resource`, `loom_status`) and a two-agent demo | Implemented | Round trip tested with the official MCP Python client; see [Agent Integrations](#agent-integrations). Not tested with a real MCP host or an LLM. |
 | HMAC-SHA256 signing, nonce, timestamp, replay protection | Implemented | Shared-secret scheme; see [limitations](#known-limitations). |
 | Local intent parser and content-safety checker | Implemented | Deterministic; the safety check is a keyword list, not real screening. |
@@ -296,7 +298,7 @@ Status codes:
 - `400`: invalid packet.
 - `429`: rate limit exceeded; `negotiation_payload` carries `action: "BACK_OFF"` and `retry_after_ms` (the HTTP server also sets `Retry-After` for per-address limits).
 
-Every response includes a `correlation_id`. `GET /health` returns `{"status": "ok", "service": "loom-atp"}`.
+Every response includes a `correlation_id`. `GET /health` returns `{"status": "ok", "service": "loom-atp"}`. The gateway supports persistent connections (HTTP/1.1 keep-alive) and drops idle ones after 15 seconds.
 
 ## Agent Integrations
 
@@ -413,6 +415,28 @@ Loom is being prepared as an entry to Imagine Cup 2027. The format is a startup 
 
 The full plan, rubric mapping, ten-service Azure set, evidence checklist, and timeline are in [`docs/competition/score_to_10_plan.md`](docs/competition/score_to_10_plan.md). Open items that matter most: incorporation, a startup Azure subscription, live Azure-mode evidence, and customer validation.
 
+## Load Testing
+
+The harness in [`loadtest/run_load_test.py`](loadtest/run_load_test.py) sends many agents' handshakes at a gateway at once and reports how many got the lock, how many were told to renegotiate, how long each request took (p50, p95, p99, max), how many failed, throughput, and whether the one-winner rule held. It uses only the Python standard library and can target a local or hosted gateway.
+
+```powershell
+python -m core.api.server                       # one terminal
+python loadtest/run_load_test.py --agents 100,1000,10000 --rounds 3
+python loadtest/run_load_test.py --agents 1000,10000 --resources 50   # expect exactly 50 winners
+python loadtest/run_load_test.py --agents 1000 --unsafe-percent 10
+python loadtest/run_load_test.py --agents 100,1000 --no-keepalive     # a new connection per request
+```
+
+Useful options: `--concurrency` (requests in flight, default 200), `--check` (exit non-zero if the one-winner rule breaks or any request fails), `--report path.md`, and `--base-url` for a hosted gateway. Results go to `loadtest/results/` as JSON and Markdown.
+
+**Results so far** (local gateway, local mode, one machine that also ran the load generator; full write-up, limits and raw data in [`docs/performance/`](docs/performance/README.md)):
+
+- The one-winner rule held in all 22 saved runs, from 100 to 10,000 agents, including exactly 50 winners across 50 resources and 100 of 100 unsafe requests rejected in a 10% unsafe mix.
+- Three rounds each with connection reuse: 100 agents in about 0.1 s, 1,000 agents in about 0.7 to 0.9 s, 10,000 agents in about 6.5 to 7.2 s (roughly 1,400 to 1,500 requests per second), p95 latency about 100 to 140 ms at 10,000, and no failed requests.
+- **The first run found two problems in the gateway, now fixed:** a connection queue of only 5 (11% of requests refused at 10,000 agents, and 1 to 2 second delays) and one connection per request (which exhausted the machine's ports in repeated large runs). The gateway now has a queue of 1,024 and supports HTTP/1.1 keep-alive.
+
+What this does not show: behaviour across several gateway processes, Cosmos DB under contention (the real cross-server test), Azure OpenAI and Content Safety latency, a real network, or long runs. Those need the live Azure deployment, and cost per lock needs it too.
+
 ## Audit Log and Rate Limiting
 
 ### Audit log
@@ -445,7 +469,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - **No Entra ID verification yet.** The audit log is a local tamper-evident file (not tamper-proof, and ephemeral on a container without a volume), and rate limiting is in-memory per process.
 - **Negotiation is synthetic.** The suggested alternative resource and retry backoff are demo logic, not a negotiation policy.
 - **The local ledger is in memory and single-process.** Cross-process and cross-region locking relies on the Cosmos DB adapter, which has not been tested against real contention.
-- **The API uses the standard-library HTTP server,** suitable for local and demo use only.
+- **The API uses the standard-library HTTP server,** suitable for local and demo use only. On one machine in local mode it handled about 1,400 requests per second with connection reuse (see [Load Testing](#load-testing)); capacity in Azure mode is unmeasured.
 - **The MCP server and demo agents have only been exercised with the official MCP Python client and scripted agents.** No LLM-driven agent has been run through them yet.
 - **No customer validation or pricing yet.** Buyer and pricing hypotheses are written down in [`docs/business/buyer_and_pricing_hypotheses.md`](docs/business/buyer_and_pricing_hypotheses.md) but untested.
 
@@ -464,11 +488,13 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 - `integrations/mcp_server/`: MCP server (`loom_mcp_server.py`) and the MCP-free result logic (`loom_tools.py`).
 - `examples/`: agent and scenario demos (`scenarios/two_agent_demo.py`, `mcp/mcp_client_demo.py`).
 - `tests/`: unit and integration tests.
+- `loadtest/`: the load-test harness (`run_load_test.py`).
 - `website/`: static site (`index.html` landing page, `demo.html` live demo, `app.js` simulator, `hero-intro.js` landing intro, `landing.js` scroll reveal, `config.js` API address for hosted copies, `styles.css`, `404.html`, `robots.txt`, `assets/`).
 - `infra/main.bicep`: Azure Container Apps template.
 - `Dockerfile`: API container image.
 - `docs/competition/`: Imagine Cup 2027 plan.
 - `docs/business/`: buyer and pricing hypotheses (unvalidated).
+- `docs/performance/`: load-test write-up, reports and raw data.
 - `docs/operations/`: Azure mode, deployment runbook, validation evidence.
 - `docs/spec/`: ATP specification and architecture notes.
 - `docs/website/`: website notes.
@@ -478,7 +504,7 @@ This prints `OK` when the hash chain is intact, or the first broken line when a 
 
 GitHub Actions runs on every push and pull request:
 
-- **Python 3.10 and 3.11:** installs the package with the `mcp` extra, import smoke test, compile check, unit tests (including the real MCP stdio round trip), local example smoke, and an API scenario smoke that also runs the two-agent demo and the MCP client demo against a live gateway.
+- **Python 3.10 and 3.11:** installs the package with the `mcp` extra, import smoke test, compile check, unit tests (including the real MCP stdio round trip), local example smoke, and an API scenario smoke that also runs the two-agent demo, the MCP client demo and a small load test (300 agents, checked for the one-winner rule and zero failures) against a live gateway.
 - **Website static checks:** required files and key strings in the landing page (`index.html`), the demo page (`demo.html`), `app.js`, `hero-intro.js`, `landing.js`, and `styles.css`.
 - **Docker build:** builds the API image and smoke-tests it.
 - **Bicep validation:** builds `infra/main.bicep`.
@@ -489,7 +515,7 @@ GitHub Actions runs on every push and pull request:
 2. **Company and Azure subscription:** incorporate, enroll in Microsoft for Startups, create the startup subscription.
 3. **Live Azure mode:** real Foundry intent parsing, Content Safety, and Cosmos locks with captured evidence (public `/health`, one `201` and one `409` for the same resource, service metrics).
 4. **Security:** public-key signatures, a stronger local safety check, Entra ID or an explicit scope-out (the audit log and rate limiting now exist locally; anchoring the audit head hash remotely is still open).
-5. **Load evidence:** 100 and 1,000 agent runs (then larger) with saved latency and conflict metrics.
+5. **Load evidence:** done locally for 100, 1,000 and 10,000 agents (see [Load Testing](#load-testing)). Still to do: the same run against the Azure deployment, and Azure Load Testing for larger loads, which also gives the cost per lock.
 6. **Infrastructure as code** for all required Azure services.
 7. **TypeScript SDK**, and a plugin for an agent framework (for example Semantic Kernel or LangChain). The MCP server and a two-agent demo already exist.
 8. **Submission package:** written responses, pitch deck, demo video, architecture diagram, judge FAQ.

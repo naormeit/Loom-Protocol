@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "label": "before: default listen backlog of 5",
+    "started_at": "2026-11-06 04:53:46 UTC",
+    "base_url": "http://127.0.0.1:8095",
+    "command": "python loadtest/run_load_test.py --base-url http://127.0.0.1:8095 --agents 100,1000,10000 --concurrency 200 --label 'before: default listen backlog of 5'",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.4",
+    "cpus": 32,
+    "git_commit": "aa2a74e",
+    "resources": 1,
+    "concurrency": 200,
+    "timeout_s": 30.0,
+    "seed": 1,
+    "notes": [
+      "Latency is measured by the client from just before connecting to the end of the response; it includes queueing at the server.",
+      "'In flight' is a client-side cap (200). Larger runs queue behind it, so '10,000 agents' means 10,000 requests, not 10,000 simultaneous connections.",
+      "Each request opens a new connection (the gateway closes connections after each response).",
+      "Client and gateway ran on the same machine and shared its CPU, so these figures describe that setup, not a deployed service.",
+      "The gateway ran in local mode unless stated otherwise: in-memory ledger and keyword safety check, with no Azure services in the path."
+    ],
+    "keepalive": false
+  },
+  "runs": [
+    {
+      "agents": 100,
+      "concurrency": 100,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.126,
+      "throughput_rps": 47.0,
+      "responded": 100,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 99
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045346Z-100-1-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 100,
+        "min": 3.2,
+        "mean": 499.3,
+        "p50": 516.73,
+        "p90": 1537.7,
+        "p95": 1545.16,
+        "p99": 2049.79,
+        "max": 2063.18
+      },
+      "round": 1
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.849,
+      "throughput_rps": 346.7,
+      "responded": 988,
+      "errors": 12,
+      "error_rate_percent": 1.2,
+      "error_kinds": {
+        "refused": 12
+      },
+      "status_counts": {
+        "201": 1,
+        "409": 987
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045346Z-1000-1-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 988,
+        "min": 1.81,
+        "mean": 353.09,
+        "p50": 13.28,
+        "p90": 1545.7,
+        "p95": 2039.38,
+        "p99": 2082.82,
+        "max": 2113.71
+      },
+      "round": 1
+    },
+    {
+      "agents": 10000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 22.326,
+      "throughput_rps": 398.5,
+      "responded": 8896,
+      "errors": 1104,
+      "error_rate_percent": 11.04,
+      "error_kinds": {
+        "refused": 1104
+      },
+      "status_counts": {
+        "201": 1,
+        "409": 8895
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045346Z-10000-1-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 8896,
+        "min": 1.79,
+        "mean": 214.92,
+        "p50": 12.69,
+        "p90": 1031.19,
+        "p95": 1556.26,
+        "p99": 2072.64,
+        "max": 2201.54
+      },
+      "round": 1
+    }
+  ]
+}

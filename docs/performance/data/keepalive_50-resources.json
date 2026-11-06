@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "label": "local gateway, 50 resources",
+    "started_at": "2026-11-06 05:02:57 UTC",
+    "base_url": "http://127.0.0.1:8095",
+    "command": "python loadtest/run_load_test.py --base-url http://127.0.0.1:8095 --agents 1000,10000 --concurrency 200 --resources 50 --label 'local gateway, 50 resources'",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.4",
+    "cpus": 32,
+    "git_commit": "aa2a74e",
+    "resources": 50,
+    "concurrency": 200,
+    "keepalive": true,
+    "timeout_s": 30.0,
+    "seed": 1,
+    "notes": [
+      "Latency is measured by the client from just before connecting to the end of the response; it includes queueing at the server.",
+      "'In flight' is a client-side cap (200). Larger runs queue behind it, so '10,000 agents' means 10,000 requests, not 10,000 simultaneous connections.",
+      "Each worker thread reuses one connection (HTTP keep-alive), as typical HTTP client libraries do.",
+      "Client and gateway ran on the same machine and shared its CPU, so these figures describe that setup, not a deployed service.",
+      "The gateway ran in local mode unless stated otherwise: in-memory ledger and keyword safety check, with no Azure services in the path."
+    ]
+  },
+  "runs": [
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "keepalive": true,
+      "resources": 50,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 0.577,
+      "throughput_rps": 1732.9,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 50,
+        "409": 950
+      },
+      "locks_granted": 50,
+      "winners_per_resource": {
+        "resources": 50,
+        "min": 1,
+        "max": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 0.71,
+        "mean": 38.21,
+        "p50": 9.43,
+        "p90": 166.7,
+        "p95": 227.14,
+        "p99": 355.87,
+        "max": 385.06
+      },
+      "round": 1
+    },
+    {
+      "agents": 10000,
+      "concurrency": 200,
+      "keepalive": true,
+      "resources": 50,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 7.642,
+      "throughput_rps": 1308.5,
+      "responded": 10000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 50,
+        "409": 9950
+      },
+      "locks_granted": 50,
+      "winners_per_resource": {
+        "resources": 50,
+        "min": 1,
+        "max": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 10000,
+        "min": 0.58,
+        "mean": 91.72,
+        "p50": 109.11,
+        "p90": 171.68,
+        "p95": 224.25,
+        "p99": 324.68,
+        "max": 1192.98
+      },
+      "round": 1
+    }
+  ]
+}

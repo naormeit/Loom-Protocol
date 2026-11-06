@@ -47,6 +47,7 @@ jobs:
             examples/scenarios/limited_inventory_drop.py \
             examples/scenarios/two_agent_demo.py \
             examples/mcp/mcp_client_demo.py \
+            loadtest/run_load_test.py \
             integrations/mcp_server/loom_tools.py \
             integrations/mcp_server/loom_mcp_server.py
 
@@ -97,6 +98,15 @@ jobs:
 
           python examples/mcp/mcp_client_demo.py \
             --base-url http://127.0.0.1:8090
+
+          python loadtest/run_load_test.py \
+            --base-url http://127.0.0.1:8090 \
+            --agents 300 \
+            --concurrency 50 \
+            --warmup 5 \
+            --pause 0 \
+            --output-dir "${RUNNER_TEMP:-/tmp}/loadtest" \
+            --check
 
   website:
     name: Website static checks

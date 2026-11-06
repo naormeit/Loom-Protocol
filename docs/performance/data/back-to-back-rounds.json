@@ -1,0 +1,399 @@
+{
+  "meta": {
+    "label": "back-to-back 1000-agent rounds after about 20,000 earlier connections (port exhaustion check)",
+    "started_at": "2026-11-06 04:57:49 UTC",
+    "base_url": "http://127.0.0.1:8095",
+    "command": "python loadtest/run_load_test.py --base-url http://127.0.0.1:8095 --agents 1000 --rounds 10 --concurrency 200 --pause 0.5 --label 'decay check'",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.4",
+    "cpus": 32,
+    "git_commit": "aa2a74e",
+    "resources": 1,
+    "concurrency": 200,
+    "timeout_s": 30.0,
+    "seed": 1,
+    "notes": [
+      "Latency is measured by the client from just before connecting to the end of the response; it includes queueing at the server.",
+      "'In flight' is a client-side cap (200). Larger runs queue behind it, so '10,000 agents' means 10,000 requests, not 10,000 simultaneous connections.",
+      "Each request opens a new connection (the gateway closes connections after each response).",
+      "Client and gateway ran on the same machine and shared its CPU, so these figures describe that setup, not a deployed service.",
+      "The gateway ran in local mode unless stated otherwise: in-memory ledger and keyword safety check, with no Azure services in the path."
+    ]
+  },
+  "runs": [
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 1.458,
+      "throughput_rps": 685.8,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-1-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 4.93,
+        "mean": 232.44,
+        "p50": 208.25,
+        "p90": 337.01,
+        "p95": 349.01,
+        "p99": 784.8,
+        "max": 789.86
+      },
+      "round": 1
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 22.399,
+      "throughput_rps": 41.7,
+      "responded": 934,
+      "errors": 66,
+      "error_rate_percent": 6.6,
+      "error_kinds": {
+        "timeout": 66
+      },
+      "status_counts": {
+        "201": 1,
+        "409": 933
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-2-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 934,
+        "min": 5.69,
+        "mean": 262.02,
+        "p50": 215.88,
+        "p90": 511.67,
+        "p95": 515.06,
+        "p99": 745.86,
+        "max": 748.46
+      },
+      "round": 2
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 21.616,
+      "throughput_rps": 42.1,
+      "responded": 910,
+      "errors": 90,
+      "error_rate_percent": 9.0,
+      "error_kinds": {
+        "timeout": 90
+      },
+      "status_counts": {
+        "201": 1,
+        "409": 909
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-3-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 910,
+        "min": 4.25,
+        "mean": 117.95,
+        "p50": 112.55,
+        "p90": 190.09,
+        "p95": 206.06,
+        "p99": 217.72,
+        "max": 230.34
+      },
+      "round": 3
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.055,
+      "throughput_rps": 486.7,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-4-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 5.21,
+        "mean": 324.32,
+        "p50": 297.58,
+        "p90": 573.62,
+        "p95": 587.58,
+        "p99": 704.67,
+        "max": 706.94
+      },
+      "round": 4
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.012,
+      "throughput_rps": 497.0,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-5-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 4.18,
+        "mean": 269.9,
+        "p50": 212.06,
+        "p90": 381.09,
+        "p95": 506.19,
+        "p99": 523.19,
+        "max": 535.71
+      },
+      "round": 5
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 1.442,
+      "throughput_rps": 693.3,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-6-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 5.67,
+        "mean": 230.85,
+        "p50": 207.62,
+        "p90": 383.63,
+        "p95": 389.69,
+        "p99": 463.58,
+        "max": 476.16
+      },
+      "round": 6
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 1.946,
+      "throughput_rps": 513.8,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-7-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 5.41,
+        "mean": 315.58,
+        "p50": 206.01,
+        "p90": 626.24,
+        "p95": 734.22,
+        "p99": 739.72,
+        "max": 741.5
+      },
+      "round": 7
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.749,
+      "throughput_rps": 363.7,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-8-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 4.45,
+        "mean": 439.91,
+        "p50": 479.84,
+        "p90": 579.11,
+        "p95": 880.67,
+        "p99": 950.19,
+        "max": 1037.37
+      },
+      "round": 8
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 2.941,
+      "throughput_rps": 340.1,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-9-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 5.05,
+        "mean": 470.23,
+        "p50": 346.46,
+        "p90": 1003.72,
+        "p95": 1162.67,
+        "p99": 1466.35,
+        "max": 1471.64
+      },
+      "round": 9
+    },
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "resources": 1,
+      "unsafe_percent": 0.0,
+      "elapsed_s": 1.435,
+      "throughput_rps": 696.7,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "409": 999
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T045749Z-1000-10-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 0,
+      "unsafe_rejected_403": 0,
+      "latency_ms": {
+        "count": 1000,
+        "min": 4.72,
+        "mean": 205.97,
+        "p50": 201.26,
+        "p90": 355.06,
+        "p95": 356.5,
+        "p99": 362.02,
+        "max": 432.12
+      },
+      "round": 10
+    }
+  ]
+}
