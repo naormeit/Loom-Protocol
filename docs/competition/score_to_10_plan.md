@@ -26,7 +26,7 @@ Stage 2 (100 points): pitch deck 20, demo video 15, Azure architecture diagram 2
 ## Hard gates (nothing else matters until these are done)
 
 1. **Incorporate.** Register a private limited company (MCA SPICe+). Assign Loom IP from personal ownership to the company. Obtain a registration number and tax details that will match business verification.
-2. **Register on Award Force**, select Student Startup, and wait for the eligibility email and the unique Microsoft for Startups referral code (generally within 24 business hours).
+2. **Register on Award Force once the company exists** (it needs the registration documents), select Student Startup, and wait for the eligibility email and the unique Microsoft for Startups referral code (generally within 24 business hours).
 3. **Redeem the code, enroll in Microsoft for Startups**, complete business verification, and create or connect the Azure subscription for Loom. Do not submit the Azure for Students subscription; it is not the startup subscription and it is the subscription that blocks Azure OpenAI and Content Safety.
 4. **Reach ten billing Azure services with USD 1+ each** (see below), kept above the threshold continuously through judging.
 
@@ -83,8 +83,8 @@ Ordered by value to the rubric.
 
 | Window | Goal |
 | --- | --- |
-| Nov 2026 | Start incorporation. Register on Award Force (Student Startup). Begin interviews and campus pilot. Align Spec and Master docs with the Overview (drop unsupported claims). |
-| Dec 2026 | Redeem code, enroll, business verification, create startup subscription. Deploy Azure mode. Capture 201 / 409 evidence. |
+| Nov 2026 | Start incorporation (Award Force registration waits until the company is approved). Begin interviews and campus pilot. Align Spec and Master docs with the Overview (drop unsupported claims). |
+| Dec 2026 | Register on Award Force (Student Startup) once the company is approved. Redeem code, enroll, business verification, create startup subscription. Deploy Azure mode. Capture 201 / 409 evidence. |
 | Jan 2027 | Bicep for all ten services. Load-test reports. Public-key signing, audit trail. Validation and pricing docs. |
 | Feb 1-20, 2027 | Deck, demo video, architecture diagram, written responses. Public hosted demo and domain. |
 | Feb 20-28, 2027 | Verify Cost Analysis shows USD 1+ on each of the ten services. Re-read every claim against the repo. Submit. |
