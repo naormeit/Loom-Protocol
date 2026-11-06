@@ -433,7 +433,9 @@ Useful options: `--concurrency` (requests in flight, default 200), `--check` (ex
 
 - The one-winner rule held in all 22 saved runs, from 100 to 10,000 agents, including exactly 50 winners across 50 resources and 100 of 100 unsafe requests rejected in a 10% unsafe mix.
 - Three rounds each with connection reuse: 100 agents in about 0.1 s, 1,000 agents in about 0.7 to 0.9 s, 10,000 agents in about 6.5 to 7.2 s (roughly 1,400 to 1,500 requests per second), p95 latency about 100 to 140 ms at 10,000, and no failed requests.
-- **The first run found two problems in the gateway, now fixed:** a connection queue of only 5 (11% of requests refused at 10,000 agents, and 1 to 2 second delays) and one connection per request (which exhausted the machine's ports in repeated large runs). The gateway now has a queue of 1,024 and supports HTTP/1.1 keep-alive.
+- **The runs found three problems in the gateway, now fixed:** a connection queue of only 5 (11% of requests refused at 10,000 agents, and 1 to 2 second delays); one connection per request (which exhausted the machine's ports in repeated large runs); and, found by CI on Linux, a constant 40 ms delay per request from the TCP delayed-acknowledgement interaction. The gateway now has a queue of 1,024, supports HTTP/1.1 keep-alive, and turns on `TCP_NODELAY`.
+
+The main results were measured on Windows; Linux CI smoke runs (300 agents, shared runners) now show p50 of about 5 to 8 ms, but the hosted gateway should be measured on Linux before quoting figures for it.
 
 What this does not show: behaviour across several gateway processes, Cosmos DB under contention (the real cross-server test), Azure OpenAI and Content Safety latency, a real network, or long runs. Those need the live Azure deployment, and cost per lock needs it too.
 
