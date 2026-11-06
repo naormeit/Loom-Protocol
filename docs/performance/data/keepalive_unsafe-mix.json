@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "label": "local gateway, 10 percent unsafe",
+    "started_at": "2026-11-06 05:03:12 UTC",
+    "base_url": "http://127.0.0.1:8095",
+    "command": "python loadtest/run_load_test.py --base-url http://127.0.0.1:8095 --agents 1000 --concurrency 200 --unsafe-percent 10 --label 'local gateway, 10 percent unsafe'",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.14.4",
+    "cpus": 32,
+    "git_commit": "aa2a74e",
+    "resources": 1,
+    "concurrency": 200,
+    "keepalive": true,
+    "timeout_s": 30.0,
+    "seed": 1,
+    "notes": [
+      "Latency is measured by the client from just before connecting to the end of the response; it includes queueing at the server.",
+      "'In flight' is a client-side cap (200). Larger runs queue behind it, so '10,000 agents' means 10,000 requests, not 10,000 simultaneous connections.",
+      "Each worker thread reuses one connection (HTTP keep-alive), as typical HTTP client libraries do.",
+      "Client and gateway ran on the same machine and shared its CPU, so these figures describe that setup, not a deployed service.",
+      "The gateway ran in local mode unless stated otherwise: in-memory ledger and keyword safety check, with no Azure services in the path.",
+      "10.0% of agents sent an unsafe request; how many are rejected depends on the gateway's safety check."
+    ]
+  },
+  "runs": [
+    {
+      "agents": 1000,
+      "concurrency": 200,
+      "keepalive": true,
+      "resources": 1,
+      "unsafe_percent": 10.0,
+      "elapsed_s": 0.654,
+      "throughput_rps": 1528.2,
+      "responded": 1000,
+      "errors": 0,
+      "error_rate_percent": 0.0,
+      "error_kinds": {},
+      "status_counts": {
+        "201": 1,
+        "403": 100,
+        "409": 899
+      },
+      "locks_granted": 1,
+      "winners_per_resource": {
+        "LOAD-20261106T050312Z-1000-1-R0": 1
+      },
+      "resources_with_multiple_winners": [],
+      "resources_with_no_winner": [],
+      "one_winner_rule_held": true,
+      "exactly_one_winner_each": true,
+      "unsafe_sent": 100,
+      "unsafe_rejected_403": 100,
+      "latency_ms": {
+        "count": 1000,
+        "min": 0.78,
+        "mean": 37.67,
+        "p50": 10.17,
+        "p90": 131.18,
+        "p95": 203.77,
+        "p99": 441.86,
+        "max": 468.25
+      },
+      "round": 1
+    }
+  ]
+}

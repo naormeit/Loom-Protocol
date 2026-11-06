@@ -69,6 +69,15 @@ def create_ip_limiter_from_config(config: AppConfig):
 def create_handler(kernel: LoomKernel, ip_limiter=None) -> Callable:
     class LoomRequestHandler(BaseHTTPRequestHandler):
         server_version = "LoomATP/1.0"
+        # HTTP/1.1 lets clients reuse a connection for many requests (every response
+        # already carries a Content-Length). Idle connections are dropped after 15 s so
+        # a client that goes quiet cannot hold a server thread forever.
+        protocol_version = "HTTP/1.1"
+        timeout = 15
+        # Each response is written as headers then body. Without TCP_NODELAY, on Linux the
+        # second write waits for the client's delayed acknowledgement (about 40 ms) on a
+        # reused connection, which CI showed as a constant 41 ms floor on every request.
+        disable_nagle_algorithm = True
 
         def do_GET(self):
             if self.path == "/health":
@@ -172,12 +181,25 @@ def create_handler(kernel: LoomKernel, ip_limiter=None) -> Callable:
     return LoomRequestHandler
 
 
+class LoomHTTPServer(ThreadingHTTPServer):
+    """Threaded HTTP server with a connection backlog sized for bursts.
+
+    The standard library's default queue holds only 5 waiting connections. When
+    hundreds of agents connect at once, the overflow is refused or retried after
+    a second, which showed up as refused connections and 1 to 2 second latency
+    spikes in the load test. A larger queue lets the burst wait its turn.
+    """
+
+    request_queue_size = 1024
+    daemon_threads = True
+
+
 class LoomAPIServer:
     def __init__(self, host: str, port: int, kernel: LoomKernel, ip_limiter=None):
         self.host = host
         self.port = port
         self.kernel = kernel
-        self.httpd = ThreadingHTTPServer(
+        self.httpd = LoomHTTPServer(
             (host, port), create_handler(kernel, ip_limiter)
         )
 

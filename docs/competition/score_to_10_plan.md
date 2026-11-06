@@ -55,7 +55,7 @@ Ordered by value to the rubric.
 
 1. **Real `LOOM_MODE=azure` deployment** with Foundry intent parsing, Content Safety, and Cosmos locks on the startup subscription. Evidence: public `/health`, one 201 and one 409 for the same resource, Azure-side usage metrics, Cosmos lock records. Keep local, hosted-local, and Azure-mode proof clearly separated.
 2. **Infrastructure as code for all ten services** in `infra/main.bicep`. Today it defines only the Container Apps environment and app; ACR and Cosmos were created by hand.
-3. **Load metrics.** 100 and 1,000 agent runs first, then 10,000. Save latency, conflict rate, and lock counts as JSON and Markdown. Run them with Azure Load Testing so they also count toward the usage requirement.
+3. **Load metrics.** 100 and 1,000 agent runs first, then 10,000. Save latency, conflict rate, and lock counts as JSON and Markdown. Run them with Azure Load Testing so they also count toward the usage requirement. Local runs at 100, 1,000 and 10,000 agents are done (6 Nov 2026; see [`docs/performance/README.md`](../performance/README.md)); the run against the Azure deployment remains.
 4. **Security claims that match code.**
    - Replace shared-secret HMAC with public-key signatures (Ed25519), keys in Key Vault, before using the word "non-repudiation". Until then, describe the current scheme as authenticated and replay-protected only.
    - Add a persistent audit trail (packet fingerprint, decision, timestamps, model metadata).
