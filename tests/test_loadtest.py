@@ -222,6 +222,26 @@ class ServerSettingsTests(GatewayCase):
         self.assertEqual(handler.protocol_version, "HTTP/1.1")
         self.assertGreater(handler.timeout, 0)
 
+    def test_nagle_is_off_on_both_ends(self):
+        # Server side: replies are written as headers then body.
+        self.assertTrue(create_handler(LoomKernel()).disable_nagle_algorithm)
+        # Client side: the harness sets TCP_NODELAY on the connection it opens.
+        import socket
+
+        status, _, error = lt.send_packet(
+            self.host,
+            self.port,
+            False,
+            {"agent_id": "NODELAY-A", "intent": lt.SAFE_INTENT, "intent_hash": "NODELAY-R", "expiry": 5000},
+            5.0,
+            keepalive=True,
+        )
+        self.assertIsNone(error)
+        self.assertEqual(status, 201)
+        sock = lt._local.connection.sock
+        self.assertEqual(sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY), 1)
+        lt.close_all_connections()
+
 
 if __name__ == "__main__":
     unittest.main()

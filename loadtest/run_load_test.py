@@ -154,6 +154,11 @@ def send_packet(
             if keepalive:
                 _local.connection = connection
         try:
+            if connection.sock is None:
+                connection.connect()
+                # Headers and body go out as two writes; without TCP_NODELAY, Linux holds the
+                # second for the peer's delayed ACK (about 40 ms) on a reused connection.
+                connection.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             connection.request("POST", "/v1/handshake", body=body, headers=headers)
             response = connection.getresponse()
             raw = response.read()

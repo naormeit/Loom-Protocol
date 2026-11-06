@@ -74,6 +74,10 @@ def create_handler(kernel: LoomKernel, ip_limiter=None) -> Callable:
         # a client that goes quiet cannot hold a server thread forever.
         protocol_version = "HTTP/1.1"
         timeout = 15
+        # Each response is written as headers then body. Without TCP_NODELAY, on Linux the
+        # second write waits for the client's delayed acknowledgement (about 40 ms) on a
+        # reused connection, which CI showed as a constant 41 ms floor on every request.
+        disable_nagle_algorithm = True
 
         def do_GET(self):
             if self.path == "/health":
