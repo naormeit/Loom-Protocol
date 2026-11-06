@@ -2,6 +2,8 @@
 
 This is the static main website for the Imagine Cup 2027 submission story.
 
+It is published at https://naormeit.github.io/Loom-Protocol/ with GitHub Pages (from the root of `main`; the root `index.html` redirects here). The demo page, `https://naormeit.github.io/Loom-Protocol/website/demo.html`, shows SIMULATED until a gateway is hosted and `apiUrl` is set in `config.js`.
+
 There are two pages: `index.html` is the landing page (story, how it works, honest status, calls to action, and the particle intro) and `demo.html` is the live simulator.
 
 Open `index.html` directly in a browser, or serve the folder over HTTP (`python -m http.server 5500 --directory website`) so the intro can sample the logo. No build step or package install is required.
